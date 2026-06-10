@@ -413,6 +413,7 @@ export default function MahjongApp() {
   const tabs = ['score', 'status', 'result'];
   const btnActive = "btn-spring";
   const btnGray = "bg-[#D1D1D6] text-gray-900 border-none shadow-none";
+  const btnDark = "bg-[#3C3C3E] text-white";
   const iosSpring = "animate-in fade-in zoom-in-95 duration-500";
 
   const CustomConfirmModal = () => {
@@ -508,7 +509,7 @@ export default function MahjongApp() {
                     setSettingsOpen(false);
                   }
                 }}
-                className={`w-full py-4 bg-gray-900 text-white rounded-[1.8rem] text-xl font-black ${btnActive}`}
+                className={`w-full py-4 bg-[#3C3C3E] text-white rounded-[1.8rem] text-xl font-black ${btnActive}`}
               >
                 儲存並關閉
               </button>
@@ -542,7 +543,7 @@ export default function MahjongApp() {
           />
           {joinError && <p className="text-red-500 font-black text-center text-lg">{joinError}</p>}
         </div>
-        <button className={`w-full h-16 bg-gray-900 text-white ${btnActive} rounded-[2.5rem] font-black text-lg`}
+        <button className={`w-full h-16 bg-[#3C3C3E] text-white ${btnActive} rounded-[2.5rem] font-black text-lg`}
           onClick={handleJoinRoom} disabled={loading || joinInput.length === 0}>
           {loading ? '查詢中...' : '確認進入'}
         </button>
@@ -579,7 +580,7 @@ export default function MahjongApp() {
               return (
                 <button key={i} disabled={taken} onClick={() => { if (!taken) { hapticClick(); setMyRole(i); } }}
                   className={`h-40 rounded-[3rem] flex flex-col items-center justify-center transition-all border-none outline-none
-                    ${selected ? 'bg-gray-900 text-white scale-95 ring-4 ring-gray-200' : taken ? 'bg-gray-100 text-gray-300' : 'bg-white text-gray-400'}`}>
+                    ${selected ? 'bg-[#3C3C3E] text-white scale-95 ring-4 ring-gray-200' : taken ? 'bg-gray-100 text-gray-300' : 'bg-white text-gray-400'}`}>
                   <span className="text-5xl font-black mb-1">{role[0]}</span>
                   <span className="text-xs font-black">{role}</span>
                   {taken && <span className="text-xs text-gray-400 mt-1">已被選</span>}
@@ -588,7 +589,7 @@ export default function MahjongApp() {
             })}
           </div>
           <button disabled={myRole === -1}
-            className={`w-full h-16 ${myRole === -1 ? 'bg-gray-200 text-gray-400' : 'bg-gray-900 text-white'} rounded-[2.5rem] font-black text-lg border-none ${btnActive}`}
+            className={`w-full h-16 ${myRole === -1 ? 'bg-gray-200 text-gray-400' : 'bg-[#3C3C3E] text-white'} rounded-[2.5rem] font-black text-lg border-none ${btnActive}`}
             onClick={() => {
               hapticClick();
               setMyName(defaultNameSetting);
@@ -630,7 +631,7 @@ export default function MahjongApp() {
             ))}
           </div>
         )}
-        <button className={`w-full h-20 bg-gray-900 text-white rounded-[2rem] font-black text-xl border-none ${btnActive}`}
+        <button className={`w-full h-20 bg-[#3C3C3E] text-white rounded-[2rem] font-black text-xl border-none ${btnActive}`}
           onClick={() => {
             hapticClick();
             const n = [...customNames];
@@ -693,7 +694,7 @@ export default function MahjongApp() {
             </div>
           </div>
           {isJoiner && <p className="text-center text-xs text-gray-400 font-black">底台由房主設定，無法更改</p>}
-          <button className={`w-full h-20 bg-gray-900 text-white rounded-[2rem] font-black text-xl border-none ${btnActive}`}
+          <button className={`w-full h-20 bg-[#3C3C3E] text-white rounded-[2rem] font-black text-xl border-none ${btnActive}`}
             onClick={() => {
               hapticClick();
               if (isSinglePlayer) {
@@ -744,7 +745,7 @@ export default function MahjongApp() {
         </div>
         <div className="flex items-center gap-2">
           {!isSinglePlayer && <span className="text-xs font-black text-gray-400 bg-gray-100 px-3 py-1 rounded-full">{roomId}</span>}
-          <div className="flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-full text-white">
+          <div className="flex items-center gap-2 px-4 py-2 bg-[#3C3C3E] rounded-full text-white">
             <span className="text-xs font-black">{customNames[myRole]}</span>
           </div>
         </div>
@@ -823,7 +824,7 @@ export default function MahjongApp() {
                   }}
                   className="w-full h-20 bg-gray-50 border-none rounded-[2rem] text-center text-5xl font-black focus:outline-none" />
               </div>
-              <button className={`w-full h-16 bg-gray-900 text-white text-xl font-black rounded-[2rem] ${btnActive} shadow-xl`} onClick={handleAddRecord}>
+              <button className={`w-full h-16 bg-[#3C3C3E] text-white text-xl font-black rounded-[2rem] ${btnActive} shadow-xl`} onClick={handleAddRecord}>
                 確認紀錄
               </button>
             </div>
@@ -862,7 +863,7 @@ export default function MahjongApp() {
 
         {activeTab === 'result' && (
           <div className={`space-y-6 pb-32 ${iosSpring}`}>
-            <div className="bg-gray-900 p-12 rounded-[4rem] text-white relative overflow-hidden shadow-2xl">
+            <div className="bg-[#3C3C3E] p-12 rounded-[4rem] text-white relative overflow-hidden shadow-2xl">
               <div className="absolute top-0 right-0 p-8 opacity-10"><Trophy size={120} /></div>
               <p className="font-black text-sm uppercase opacity-40 tracking-[0.4em]">🏆 自摸王</p>
               <h3 className="text-8xl font-black mt-6 tracking-tighter">{selfDrawKing && selfDrawKing.selfDrawCount > 0 ? selfDrawKing.name : '--'}</h3>

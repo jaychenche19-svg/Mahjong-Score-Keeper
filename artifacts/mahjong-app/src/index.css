@@ -311,14 +311,14 @@
 
   /* iOS 26 Glass Tab Bar */
   .ios-glass-bar {
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: saturate(180%) blur(28px);
-    -webkit-backdrop-filter: saturate(180%) blur(28px);
-    border: 1px solid rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.28);
+    backdrop-filter: saturate(200%) blur(32px);
+    -webkit-backdrop-filter: saturate(200%) blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.50);
     box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.10),
-      0 2px 8px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      0 8px 32px rgba(0, 0, 0, 0.07),
+      0 2px 8px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.75);
   }
 
   .ios-glass-tab {
@@ -331,12 +331,12 @@
   }
 
   .ios-glass-tab-active {
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.70);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     box-shadow:
-      0 4px 16px rgba(0, 0, 0, 0.10),
-      0 1px 4px rgba(0, 0, 0, 0.07),
+      0 4px 16px rgba(0, 0, 0, 0.08),
+      0 1px 4px rgba(0, 0, 0, 0.05),
       inset 0 1px 0 rgba(255, 255, 255, 1);
     transform: scale(1.08);
   }
