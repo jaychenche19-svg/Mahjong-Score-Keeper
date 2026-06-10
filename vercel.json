@@ -1,0 +1,7 @@
+{
+  "buildCommand": "pnpm --filter @workspace/mahjong-app run build:vercel",
+  "outputDirectory": "artifacts/mahjong-app/dist/public",
+  "installCommand": "pnpm install",
+  "framework": null,
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
