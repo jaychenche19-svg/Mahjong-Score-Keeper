@@ -886,21 +886,31 @@ export default function MahjongApp() {
         )}
       </div>
 
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] h-20 bg-white/80 backdrop-blur-xl rounded-[2.5rem] flex z-50 p-2 border border-white shadow-2xl">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[82%] max-w-xs z-50 rounded-[2.2rem] ios-glass-bar p-2 flex gap-2">
         {[
-          { id: 'score', icon: <Calculator size={24} /> },
-          { id: 'status', icon: <Trophy size={24} /> },
-          { id: 'result', icon: <Crown size={24} /> },
-        ].map(t => (
-          <button key={t.id}
-            onTouchStart={() => setPressedBtn(t.id)}
-            onTouchEnd={() => { setPressedBtn(null); hapticClick(); setActiveTab(t.id); }}
-            onClick={() => { hapticClick(); setActiveTab(t.id); }}
-            style={{ transform: pressedBtn === t.id ? 'scale(0.88)' : 'scale(1)', transition: 'transform 0.1s cubic-bezier(0.25,0.46,0.45,0.94)' }}
-            className={`flex-1 h-full rounded-[2rem] flex items-center justify-center ${activeTab === t.id ? 'bg-gray-900 text-white' : 'text-gray-300'}`}>
-            {t.icon}
-          </button>
-        ))}
+          { id: 'score',  icon: <Calculator size={22} />, label: '記分' },
+          { id: 'status', icon: <Trophy size={22} />,     label: '狀態' },
+          { id: 'result', icon: <Crown size={22} />,      label: '結果' },
+        ].map(t => {
+          const isActive = activeTab === t.id;
+          return (
+            <button
+              key={t.id}
+              onTouchStart={() => setPressedBtn(t.id)}
+              onTouchEnd={() => { setPressedBtn(null); hapticClick(); setActiveTab(t.id); }}
+              onClick={() => { hapticClick(); setActiveTab(t.id); }}
+              className={`ios-glass-tab flex-1 h-16 rounded-[1.6rem] flex flex-col items-center justify-center gap-1
+                ${isActive ? 'ios-glass-tab-active text-gray-900' : 'text-gray-400'}`}
+            >
+              <span className={`transition-transform duration-200 ${isActive ? 'scale-110' : 'scale-100'}`}>
+                {t.icon}
+              </span>
+              <span className={`text-[10px] font-black tracking-wide transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-50'}`}>
+                {t.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
