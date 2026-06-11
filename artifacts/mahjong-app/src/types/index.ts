@@ -21,6 +21,7 @@ export interface HistoryRecord {
   loser: number;
   amount: number;
   scores: number[];
+  isDraw?: boolean;
 }
 
 export interface StatEntry {

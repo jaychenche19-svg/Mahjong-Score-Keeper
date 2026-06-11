@@ -176,6 +176,7 @@ export default function MahjongApp() {
       onLoserChange={g.setLoserIdx}
       onHuTaiChange={g.setHuTai}
       onSaveRecord={g.saveRecord}
+      onDraw={g.handleDraw}
       onUndoLast={g.handleUndoLast}
       onReset={g.handleReset}
       onBackToHome={g.handleBackToHome}

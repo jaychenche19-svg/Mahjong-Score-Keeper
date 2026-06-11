@@ -30,7 +30,8 @@ interface Props {
   onWinnerChange: (val: number) => void;
   onLoserChange: (val: number) => void;
   onHuTaiChange: (val: number | '') => void;
-  onSaveRecord: (scores: number[]) => void;
+  onSaveRecord: (scores: number[], winnerIdx: number, dealerIdx: number, renZhuang: number) => void;
+  onDraw: () => void;
   onUndoLast: () => void;
   onReset: () => void;
   onBackToHome: () => void;
@@ -49,7 +50,7 @@ export function GamePage({
   base, taiValue, dealerIdx, renZhuang, winnerIdx, loserIdx, huTai,
   history, activeTab, totalScores, loserKing, selfDrawKing, confirmConfig,
   onDealerChange, onRenZhuangChange, onWinnerChange, onLoserChange, onHuTaiChange,
-  onSaveRecord, onUndoLast, onReset, onBackToHome, onTabChange,
+  onSaveRecord, onDraw, onUndoLast, onReset, onBackToHome, onTabChange,
   hapticClick, hapticSlide, triggerConfirm, onConfirm, onCancel,
 }: Props) {
   const swipeTouchStartX = useRef<number | null>(null);
@@ -92,6 +93,7 @@ export function GamePage({
             onLoserChange={onLoserChange}
             onHuTaiChange={onHuTaiChange}
             onSaveRecord={onSaveRecord}
+            onDraw={onDraw}
             triggerConfirm={triggerConfirm}
             hapticSlide={hapticSlide}
           />
@@ -103,6 +105,7 @@ export function GamePage({
             dealerIdx={dealerIdx}
             totalScores={totalScores}
             historyEmpty={history.length === 0}
+            history={history}
             onUndoLast={onUndoLast}
             hapticClick={hapticClick}
           />

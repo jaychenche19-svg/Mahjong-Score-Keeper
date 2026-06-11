@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, Waves } from 'lucide-react';
 import { calcPayment } from '../../utils/calcPayment';
+
+const MAX_TAI = 30;
 
 interface Props {
   base: number;
@@ -16,7 +18,8 @@ interface Props {
   onWinnerChange: (val: number) => void;
   onLoserChange: (val: number) => void;
   onHuTaiChange: (val: number | '') => void;
-  onSaveRecord: (scores: number[]) => void;
+  onSaveRecord: (scores: number[], winnerIdx: number, dealerIdx: number, renZhuang: number) => void;
+  onDraw: () => void;
   triggerConfirm: (title: string, onConfirm: () => void, description?: ReactNode) => void;
   hapticSlide: () => void;
 }
@@ -24,15 +27,18 @@ interface Props {
 export function ScoreTab({
   base, taiValue, dealerIdx, renZhuang, winnerIdx, loserIdx, huTai, customNames,
   onDealerChange, onRenZhuangChange, onWinnerChange, onLoserChange, onHuTaiChange,
-  onSaveRecord, triggerConfirm, hapticSlide,
+  onSaveRecord, onDraw, triggerConfirm, hapticSlide,
 }: Props) {
+  const taiNum = Number(huTai) || 0;
+  const taiError = taiNum > MAX_TAI ? `台數上限 ${MAX_TAI} 台` : '';
+
   const handleRecord = () => {
-    const currentHuTai = Number(huTai) || 0;
+    if (taiError) return;
     const isSelfDraw = loserIdx === -1;
     const { scores, displayTotal, perPlayerAmounts } = calcPayment({
       base: Number(base) || 0,
       taiValue: Number(taiValue) || 0,
-      huTai: currentHuTai,
+      huTai: taiNum,
       winnerIdx, loserIdx, dealerIdx, renZhuang,
     });
 
@@ -50,7 +56,7 @@ export function ScoreTab({
         </div>
         <div className="flex justify-between items-center">
           <span className="font-bold text-gray-400">胡台數</span>
-          <span className="text-2xl font-black">{currentHuTai} 台</span>
+          <span className="text-2xl font-black">{taiNum} 台</span>
         </div>
         {isSelfDraw ? (
           <div className="space-y-1 border-t border-dashed border-gray-200 pt-3">
@@ -89,10 +95,11 @@ export function ScoreTab({
           <span className="font-bold text-gray-900">{isSelfDraw ? '贏家總收' : '總金額'}</span>
           <span className="text-4xl font-black text-blue-600">${displayTotal}</span>
         </div>
+        <p className="text-xs text-gray-400 text-center pt-1">確認後莊家將自動輪換</p>
       </div>
     );
 
-    triggerConfirm('確認新增這筆紀錄？', () => onSaveRecord(scores), desc);
+    triggerConfirm('確認新增這筆紀錄？', () => onSaveRecord(scores, winnerIdx, dealerIdx, renZhuang), desc);
   };
 
   return (
@@ -175,18 +182,34 @@ export function ScoreTab({
             value={huTai}
             onChange={e => {
               const val = e.target.value.replace(/\D/g, '');
-              onHuTaiChange(val === '' ? '' : parseInt(val, 10));
+              const num = val === '' ? '' : parseInt(val, 10);
+              onHuTaiChange(num);
             }}
-            className="w-full h-20 bg-gray-50 border-none rounded-[2rem] text-center text-5xl font-black focus:outline-none"
+            className={`w-full h-20 border-none rounded-[2rem] text-center text-5xl font-black focus:outline-none transition-colors ${
+              taiError ? 'bg-red-50 text-red-500' : 'bg-gray-50'
+            }`}
           />
+          {taiError && <p className="text-red-500 font-black text-sm">{taiError}</p>}
         </div>
 
-        <button
-          className="w-full h-16 bg-[#C7C7CC] text-gray-900 text-xl font-black rounded-[2rem] btn-spring shadow-xl"
-          onClick={handleRecord}
-        >
-          確認紀錄
-        </button>
+        <div className="grid grid-cols-5 gap-3">
+          <button
+            className="col-span-1 h-16 bg-gray-100 text-gray-500 font-black rounded-[2rem] btn-spring flex flex-col items-center justify-center gap-0.5"
+            onClick={onDraw}
+          >
+            <Waves size={18} />
+            <span className="text-xs">流局</span>
+          </button>
+          <button
+            className={`col-span-4 h-16 text-gray-900 text-xl font-black rounded-[2rem] btn-spring shadow-xl transition-opacity ${
+              taiError ? 'opacity-40 bg-gray-200 cursor-not-allowed' : 'bg-[#C7C7CC]'
+            }`}
+            onClick={handleRecord}
+            disabled={!!taiError}
+          >
+            確認紀錄
+          </button>
+        </div>
       </div>
     </div>
   );
