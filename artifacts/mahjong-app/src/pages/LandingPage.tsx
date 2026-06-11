@@ -38,7 +38,7 @@ export function LandingPage({
       </button>
 
       <div className="text-7xl mb-12 animate-bounce">🐶</div>
-      <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-16">麻將狗</h1>
+      <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-16">Mahjong Dog</h1>
 
       <div className="w-full max-w-xs space-y-4">
         <button

@@ -1,146 +1,199 @@
-import { useEffect, useState, type ComponentType } from "react";
+import { useGameState } from './hooks/useGameState';
+import { LandingPage } from './pages/LandingPage';
+import { JoinRoomPage } from './pages/JoinRoomPage';
+import { PickRolePage } from './pages/PickRolePage';
+import { NameSetupPage } from './pages/NameSetupPage';
+import { ConfigSetupPage } from './pages/ConfigSetupPage';
+import { GamePage } from './pages/GamePage';
+import { BASE_ROLES } from './utils/constants';
 
-import { modules as discoveredModules } from "./.generated/mockup-components";
+export default function MahjongApp() {
+  const g = useGameState();
 
-type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
+  const confirmHandlers = {
+    onConfirm: () => { g.confirmConfig.onConfirm(); g.closeConfirm(); },
+    onCancel: g.closeConfirm,
+  };
 
-function _resolveComponent(
-  mod: Record<string, unknown>,
-  name: string,
-): ComponentType | undefined {
-  const fns = Object.values(mod).filter(
-    (v) => typeof v === "function",
-  ) as ComponentType[];
-  return (
-    (mod.default as ComponentType) ||
-    (mod.Preview as ComponentType) ||
-    (mod[name] as ComponentType) ||
-    fns[fns.length - 1]
+  if (g.view === 'landing') return (
+    <LandingPage
+      loading={g.loading}
+      confirmConfig={g.confirmConfig}
+      settingsOpen={g.settingsOpen}
+      tempName={g.tempName}
+      defaultNameSetting={g.defaultNameSetting}
+      vibrationEnabled={g.vibrationEnabled}
+      onCreateRoom={g.handleCreateRoom}
+      onJoinRoom={() => { g.hapticClick(); g.setView('joinRoom'); }}
+      onSinglePlayer={() => { g.hapticClick(); g.setIsSinglePlayer(true); g.setView('pickRole'); }}
+      onOpenSettings={() => { g.hapticClick(); g.setTempName(g.defaultNameSetting); g.setSettingsOpen(true); }}
+      onCloseSettings={() => { g.hapticClick(); g.setSettingsOpen(false); }}
+      onSaveSettings={() => {
+        g.hapticClick();
+        if (g.tempName !== g.defaultNameSetting) {
+          g.triggerConfirm('確認修改預設名稱嗎？', () => {
+            g.setDefaultNameSetting(g.tempName);
+            g.setSettingsOpen(false);
+          });
+        } else {
+          g.setSettingsOpen(false);
+        }
+      }}
+      onTempNameChange={g.setTempName}
+      onVibrationToggle={() => {
+        const next = !g.vibrationEnabled;
+        g.setVibrationEnabled(next);
+        if (next && navigator.vibrate) navigator.vibrate(50);
+      }}
+      {...confirmHandlers}
+    />
   );
-}
 
-function PreviewRenderer({
-  componentPath,
-  modules,
-}: {
-  componentPath: string;
-  modules: ModuleMap;
-}) {
-  const [Component, setComponent] = useState<ComponentType | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    setComponent(null);
-    setError(null);
-
-    async function loadComponent(): Promise<void> {
-      const key = `./components/mockups/${componentPath}.tsx`;
-      const loader = modules[key];
-      if (!loader) {
-        setError(`No component found at ${componentPath}.tsx`);
-        return;
-      }
-
-      try {
-        const mod = await loader();
-        if (cancelled) {
-          return;
-        }
-        const name = componentPath.split("/").pop()!;
-        const comp = _resolveComponent(mod, name);
-        if (!comp) {
-          setError(
-            `No exported React component found in ${componentPath}.tsx\n\nMake sure the file has at least one exported function component.`,
-          );
-          return;
-        }
-        setComponent(() => comp);
-      } catch (e) {
-        if (cancelled) {
-          return;
-        }
-
-        const message = e instanceof Error ? e.message : String(e);
-        setError(`Failed to load preview.\n${message}`);
-      }
-    }
-
-    void loadComponent();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [componentPath, modules]);
-
-  if (error) {
-    return (
-      <pre style={{ color: "red", padding: "2rem", fontFamily: "system-ui" }}>
-        {error}
-      </pre>
-    );
-  }
-
-  if (!Component) return null;
-
-  return <Component />;
-}
-
-function getBasePath(): string {
-  return import.meta.env.BASE_URL.replace(/\/$/, "");
-}
-
-function getPreviewExamplePath(): string {
-  const basePath = getBasePath();
-  return `${basePath}/preview/ComponentName`;
-}
-
-function Gallery() {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-      <div className="text-center max-w-md">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-3">
-          Component Preview Server
-        </h1>
-        <p className="text-gray-500 mb-4">
-          This server renders individual components for the workspace canvas.
-        </p>
-        <p className="text-sm text-gray-400">
-          Access component previews at{" "}
-          <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
-            {getPreviewExamplePath()}
-          </code>
-        </p>
-      </div>
-    </div>
+  if (g.view === 'joinRoom') return (
+    <JoinRoomPage
+      joinInput={g.joinInput}
+      joinError={g.joinError}
+      loading={g.loading}
+      confirmConfig={g.confirmConfig}
+      onJoinInputChange={val => { g.setJoinInput(val); g.setJoinError(''); }}
+      onJoinRoom={g.handleJoinRoom}
+      onBack={() => { g.hapticClick(); g.setJoinError(''); g.setView('landing'); }}
+      {...confirmHandlers}
+    />
   );
-}
 
-function getPreviewPath(): string | null {
-  const basePath = getBasePath();
-  const { pathname } = window.location;
-  const local =
-    basePath && pathname.startsWith(basePath)
-      ? pathname.slice(basePath.length) || "/"
-      : pathname;
-  const match = local.match(/^\/preview\/(.+)$/);
-  return match ? match[1] : null;
-}
+  if (g.view === 'pickRole') return (
+    <PickRolePage
+      myRole={g.myRole}
+      isSinglePlayer={g.isSinglePlayer}
+      roomId={g.roomId}
+      players={g.players}
+      confirmConfig={g.confirmConfig}
+      onSelectRole={i => {
+        g.hapticClick();
+        // 只能選沒有被別人佔的位子
+        const taken = g.players[i] !== null;
+        if (!taken) g.setMyRole(i);
+      }}
+      onConfirmRole={() => {
+        g.hapticClick();
+        g.setMyName(g.defaultNameSetting);
+        g.setView('nameSetup');
+      }}
+      onBack={() => {
+        g.hapticClick();
+        if (g.isSinglePlayer) { g.setView('landing'); return; }
+        if (g.players.some(p => p !== null)) { g.setView('joinRoom'); }
+        else { g.handleBackFromSetup(); }
+      }}
+      {...confirmHandlers}
+    />
+  );
 
-function App() {
-  const previewPath = getPreviewPath();
+  if (g.view === 'nameSetup') return (
+    <NameSetupPage
+      myRole={g.myRole}
+      myName={g.myName}
+      isSinglePlayer={g.isSinglePlayer}
+      customNames={g.customNames}
+      confirmConfig={g.confirmConfig}
+      onMyNameChange={g.setMyName}
+      onOtherNameChange={(idx, val) => {
+        const n = [...g.customNames];
+        n[idx] = val;
+        g.setCustomNames(n);
+      }}
+      onNext={() => {
+        g.hapticClick();
+        const n = [...g.customNames];
+        n[g.myRole] = g.myName || BASE_ROLES[g.myRole];
+        g.setCustomNames(n);
+        g.setView('configSetup');
+      }}
+      onBack={() => { g.hapticClick(); g.setView('pickRole'); }}
+      {...confirmHandlers}
+    />
+  );
 
-  if (previewPath) {
+  if (g.view === 'configSetup') {
+    const isJoiner = !g.isSinglePlayer && g.players.some(p => p !== null);
     return (
-      <PreviewRenderer
-        componentPath={previewPath}
-        modules={discoveredModules}
+      <ConfigSetupPage
+        roomId={g.roomId}
+        base={g.base}
+        taiValue={g.taiValue}
+        isSinglePlayer={g.isSinglePlayer}
+        players={g.players}
+        loading={g.loading}
+        copied={g.copied}
+        confirmConfig={g.confirmConfig}
+        onBaseChange={g.setBase}
+        onTaiChange={g.setTaiValue}
+        onCopyRoomId={() => {
+          g.hapticClick();
+          navigator.clipboard?.writeText(g.roomId);
+          g.setCopied(true);
+          setTimeout(() => g.setCopied(false), 2000);
+        }}
+        onStart={() => {
+          g.hapticClick();
+          if (g.isSinglePlayer) {
+            const n = [...g.customNames];
+            n[g.myRole] = g.myName || BASE_ROLES[g.myRole];
+            g.setCustomNames(n);
+            g.setView('app');
+          } else {
+            if (isJoiner) {
+              // 加入者直接進入，不需要確認
+              g.handleStartGame(true);
+            } else {
+              g.triggerConfirm(
+                '確定開始遊戲嗎？',
+                () => g.handleStartGame(false),
+                <p className="text-xs text-red-500 font-bold">⚠️ 確認後進入遊戲將無法更改底台</p>
+              );
+            }
+          }
+        }}
+        onBack={() => { g.hapticClick(); g.setView('nameSetup'); }}
+        {...confirmHandlers}
       />
     );
   }
 
-  return <Gallery />;
+  return (
+    <GamePage
+      customNames={g.customNames}
+      myRole={g.myRole}
+      roomId={g.roomId}
+      isSinglePlayer={g.isSinglePlayer}
+      base={g.base}
+      taiValue={g.taiValue}
+      dealerIdx={g.dealerIdx}
+      renZhuang={g.renZhuang}
+      winnerIdx={g.winnerIdx}
+      loserIdx={g.loserIdx}
+      huTai={g.huTai}
+      history={g.history}
+      activeTab={g.activeTab}
+      totalScores={g.totalScores}
+      loserKing={g.loserKing}
+      selfDrawKing={g.selfDrawKing}
+      confirmConfig={g.confirmConfig}
+      onDealerChange={g.handleDealerChange}
+      onRenZhuangChange={g.handleRenZhuangChange}
+      onWinnerChange={g.setWinnerIdx}
+      onLoserChange={g.setLoserIdx}
+      onHuTaiChange={g.setHuTai}
+      onSaveRecord={g.saveRecord}
+      onUndoLast={g.handleUndoLast}
+      onReset={g.handleReset}
+      onBackToHome={g.handleBackToHome}
+      onTabChange={g.setActiveTab}
+      hapticClick={g.hapticClick}
+      hapticSlide={g.hapticSlide}
+      triggerConfirm={g.triggerConfirm}
+      {...confirmHandlers}
+    />
+  );
 }
-
-export default App;

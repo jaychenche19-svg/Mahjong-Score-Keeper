@@ -1,4 +1,4 @@
-import { Calculator, Copy, Check } from 'lucide-react';
+import { Calculator, Copy, Check, Lock } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import type { ConfirmConfig, Player } from '../types';
 
@@ -50,34 +50,39 @@ export function ConfigSetupPage({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          {[
-            { label: '底', value: base, onChange: onBaseChange },
-            { label: '台', value: taiValue, onChange: onTaiChange },
-          ].map(({ label, value, onChange }) => (
-            <div key={label} className="space-y-2 text-center">
-              <label className="text-gray-400 font-black text-sm uppercase">{label}</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={value}
-                onChange={e => {
-                  if (!isJoiner) {
-                    const val = e.target.value.replace(/\D/g, '');
-                    onChange(val === '' ? 0 : Number(val));
-                  }
-                }}
-                readOnly={isJoiner}
-                className={`w-full h-20 border-none rounded-2xl text-center font-black text-4xl focus:outline-none ${isJoiner ? 'bg-gray-100 text-gray-400' : 'bg-gray-50'}`}
-              />
-            </div>
-          ))}
-        </div>
+        <div className="relative">
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { label: '底', value: base, onChange: onBaseChange },
+              { label: '台', value: taiValue, onChange: onTaiChange },
+            ].map(({ label, value, onChange }) => (
+              <div key={label} className="space-y-2 text-center">
+                <label className="text-gray-400 font-black text-sm uppercase">{label}</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={value}
+                  onChange={e => {
+                    if (!isJoiner) {
+                      const val = e.target.value.replace(/\D/g, '');
+                      onChange(val === '' ? 0 : Number(val));
+                    }
+                  }}
+                  readOnly={isJoiner}
+                  className={`w-full h-20 border-none rounded-2xl text-center font-black text-4xl focus:outline-none ${isJoiner ? 'bg-gray-100 text-gray-400' : 'bg-gray-50'}`}
+                />
+              </div>
+            ))}
+          </div>
 
-        {isJoiner && (
-          <p className="text-center text-xs text-gray-400 font-black">底台由房主設定，無法更改</p>
-        )}
+          {isJoiner && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl">
+              <Lock size={36} className="text-gray-400" />
+              <p className="text-xs text-gray-400 font-black">底台由房主設定，無法更改</p>
+            </div>
+          )}
+        </div>
 
         <button
           className="w-full h-20 bg-[#C7C7CC] text-gray-900 rounded-[2rem] font-black text-xl border-none btn-spring"

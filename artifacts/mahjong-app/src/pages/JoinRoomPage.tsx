@@ -21,15 +21,29 @@ export function JoinRoomPage({
     <div className="min-h-screen bg-[#F2F2F7] p-6 flex flex-col justify-center animate-in fade-in zoom-in-95 duration-500">
       <div className="space-y-6">
         <h2 className="text-4xl font-black text-center mb-8">加入房間</h2>
-        <div className="bg-white rounded-[2.5rem] p-10 space-y-4 shadow-sm">
+        <div className="bg-white rounded-[2.5rem] p-10 space-y-6 shadow-sm">
+          <div className="flex justify-center gap-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className={`w-5 h-5 rounded-full transition-all duration-150 ${
+                  i < joinInput.length ? 'bg-gray-900 scale-110' : 'bg-gray-200'
+                }`}
+              />
+            ))}
+          </div>
           <input
-            placeholder="輸入5位數字房號"
-            className="w-full border-none bg-gray-100 text-center font-black text-4xl h-20 rounded-2xl focus:outline-none tracking-widest"
+            className="w-full border-none bg-gray-100 text-center font-black text-4xl h-14 rounded-2xl focus:outline-none tracking-widest"
             value={joinInput}
-            onChange={e => onJoinInputChange(e.target.value.replace(/\D/g, ''))}
+            onChange={e => {
+              const val = e.target.value.replace(/\D/g, '');
+              if (val.length === 1 && val === '0') return;
+              onJoinInputChange(val);
+            }}
             maxLength={5}
             inputMode="numeric"
             pattern="[0-9]*"
+            placeholder="點此輸入房號"
           />
           {joinError && <p className="text-red-500 font-black text-center text-lg">{joinError}</p>}
         </div>
