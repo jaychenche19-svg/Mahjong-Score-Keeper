@@ -22,16 +22,6 @@ export function JoinRoomPage({
       <div className="space-y-6">
         <h2 className="text-4xl font-black text-center mb-8">加入房間</h2>
         <div className="bg-white rounded-[2.5rem] p-10 space-y-6 shadow-sm">
-          <div className="flex justify-center gap-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className={`w-5 h-5 rounded-full transition-all duration-150 ${
-                  i < joinInput.length ? 'bg-gray-900 scale-110' : 'bg-gray-200'
-                }`}
-              />
-            ))}
-          </div>
           <input
             className="w-full border-none bg-gray-100 text-center font-black text-4xl h-14 rounded-2xl focus:outline-none tracking-widest"
             value={joinInput}
@@ -43,7 +33,7 @@ export function JoinRoomPage({
             maxLength={5}
             inputMode="numeric"
             pattern="[0-9]*"
-            placeholder="點此輸入房號"
+            placeholder="• • • • •"
           />
           {joinError && <p className="text-red-500 font-black text-center text-lg">{joinError}</p>}
         </div>
