@@ -53,15 +53,33 @@ export function GamePage({
   onSaveRecord, onDraw, onUndoLast, onReset, onBackToHome, onTabChange,
   hapticClick, hapticSlide, triggerConfirm, onConfirm, onCancel,
 }: Props) {
-  const swipeTouchStartX = useRef<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
-  const handleSwipeEnd = (endX: number) => {
-    if (swipeTouchStartX.current === null) return;
-    const diff = swipeTouchStartX.current - endX;
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
+    touchStartX.current = null;
+    touchStartY.current = null;
+
+    // 垂直滑動超過水平就不切換（避免上下滾動誤觸）
+    if (dy > Math.abs(dx) * 0.8) return;
+    if (Math.abs(dx) < 40) return;
+
     const currentIdx = TABS.indexOf(activeTab as typeof TABS[number]);
-    if (diff > 60 && currentIdx < TABS.length - 1) { hapticClick(); onTabChange(TABS[currentIdx + 1]); }
-    if (diff < -60 && currentIdx > 0) { hapticClick(); onTabChange(TABS[currentIdx - 1]); }
-    swipeTouchStartX.current = null;
+    if (dx < 0 && currentIdx < TABS.length - 1) {
+      hapticClick();
+      onTabChange(TABS[currentIdx + 1]);
+    } else if (dx > 0 && currentIdx > 0) {
+      hapticClick();
+      onTabChange(TABS[currentIdx - 1]);
+    }
   };
 
   return (
@@ -78,8 +96,8 @@ export function GamePage({
 
       <div
         className="p-5"
-        onTouchStart={e => { swipeTouchStartX.current = e.touches[0].clientX; }}
-        onTouchEnd={e => handleSwipeEnd(e.changedTouches[0].clientX)}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {activeTab === 'score' && (
           <ScoreTab

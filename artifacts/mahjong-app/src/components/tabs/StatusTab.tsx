@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Crown, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Crown, RotateCcw, ChevronDown } from 'lucide-react';
 import { BASE_ROLES } from '../../utils/constants';
 import type { HistoryRecord } from '../../types';
 
@@ -22,39 +22,44 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
       {customNames.map((name, i) => {
         const isMe = i === myRole;
         const isDealer = i === dealerIdx;
+        const score = totalScores[i];
         return (
           <div
             key={i}
-            className={`p-8 rounded-[3.5rem] flex justify-between items-center border-2 transition-all duration-300
+            className={`p-6 rounded-[3.5rem] flex items-center justify-between border-2 transition-all duration-300
               ${isMe ? 'bg-blue-50 border-blue-200' : 'bg-white border-transparent shadow-sm'}
               ${isDealer ? 'ring-4 ring-yellow-400/30' : ''}`}
           >
-            <div className="flex items-center gap-6">
-              <div className={`w-20 h-20 rounded-[2rem] flex flex-col items-center justify-center font-black transition-all duration-300
+            <div className="flex items-center gap-4 min-w-0 flex-1">
+              <div className={`w-16 h-16 shrink-0 rounded-[1.5rem] flex flex-col items-center justify-center font-black transition-all duration-300
                 ${isDealer ? 'bg-yellow-400 text-gray-900 scale-110 shadow-lg' : 'bg-gray-100 text-gray-400'}`}>
-                {isDealer && <Crown size={18} className="mb-1 animate-bounce" />}
-                <span className="text-3xl">{BASE_ROLES[i][0]}</span>
+                {isDealer && <Crown size={14} className="mb-0.5 animate-bounce" />}
+                <span className="text-2xl">{BASE_ROLES[i][0]}</span>
               </div>
-              <div className="flex flex-col">
-                <span className={`font-black text-3xl ${isMe ? 'text-blue-600' : 'text-gray-900'}`}>
-                  {name}
-                  {isMe && <span className="text-sm ml-2 font-bold opacity-60">(我)</span>}
-                </span>
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-1 flex-wrap">
+                  <span className={`font-black text-xl truncate max-w-[100px] ${isMe ? 'text-blue-600' : 'text-gray-900'}`}>
+                    {name}
+                  </span>
+                  {isMe && <span className="text-xs font-bold opacity-60 text-blue-400 shrink-0">(我)</span>}
+                </div>
                 {isDealer && <span className="text-xs font-black text-yellow-600 tracking-widest">莊家連莊中</span>}
               </div>
             </div>
-            <div className={`text-5xl font-black transition-all duration-500 ${totalScores[i] >= 0 ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
-              {totalScores[i] >= 0 ? `+${totalScores[i]}` : totalScores[i]}
+            <div
+              className={`font-black shrink-0 ml-2 transition-all duration-500 ${score >= 0 ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}
+              style={{ fontSize: 'clamp(1.2rem, 6vw, 2.5rem)' }}
+            >
+              {score >= 0 ? `+${score}` : score}
             </div>
           </div>
         );
       })}
 
-      {/* 歷史記錄收合區塊 */}
       {history.length > 0 && (
         <div className="bg-white rounded-[2.5rem] shadow-sm overflow-hidden transition-all duration-300">
           <button
-            className="w-full flex items-center justify-between px-6 py-5 active:bg-gray-50 active:scale-98 transition-all duration-150"
+            className="w-full flex items-center justify-between px-6 py-5 active:bg-gray-50 transition-all duration-150"
             onClick={() => { hapticClick(); setHistoryOpen(o => !o); }}
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
@@ -84,9 +89,7 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
                         <span className="text-xl">🌊</span>
                         <div>
                           <p className="font-black text-gray-400 text-sm">流局</p>
-                          {dealerName && (
-                            <p className="text-xs text-yellow-500 font-bold">👑 {dealerName} 連莊</p>
-                          )}
+                          {dealerName && <p className="text-xs text-yellow-500 font-bold">👑 {dealerName} 連莊</p>}
                         </div>
                       </div>
                       <span className="text-xs font-bold text-gray-300">不計分</span>
@@ -139,7 +142,11 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
       )}
 
       <button
-        className={`w-full h-16 text-gray-300 border-none text-base font-bold flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 ${historyEmpty ? 'opacity-30' : 'active:text-gray-500'}`}
+        className={`w-full h-16 border-none text-base font-bold flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 rounded-[2rem] ${
+          historyEmpty
+            ? 'text-gray-200 opacity-40 cursor-not-allowed'
+            : 'text-gray-400 active:text-gray-600'
+        }`}
         onClick={() => { hapticClick(); onUndoLast(); }}
         disabled={historyEmpty}
         style={{ WebkitTapHighlightColor: 'transparent' }}
