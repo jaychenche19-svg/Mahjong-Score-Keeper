@@ -70,12 +70,6 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
 
           {historyOpen && (
             <div className="px-6 pb-4 space-y-1 border-t border-gray-50">
-              <button
-                className="w-full h-14 flex items-center justify-center gap-2 text-gray-400 font-bold text-sm active:text-gray-600 transition-colors border-b border-gray-50 mb-2"
-                onClick={() => { hapticClick(); onUndoLast(); }}
-              >
-                <RotateCcw size={16} /> 撤銷上一筆
-              </button>
               {history.map((rec, idx) => {
                 const roundNum = history.length - idx;
                 const recDealerIdx = rec.dealerIdx ?? -1;
@@ -142,6 +136,14 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
           )}
         </div>
       )}
+
+      <button
+        className={`w-full h-16 text-gray-300 border-none text-base font-bold flex items-center justify-center gap-2 transition-opacity ${historyEmpty ? 'opacity-30' : ''}`}
+        onClick={() => { hapticClick(); onUndoLast(); }}
+        disabled={historyEmpty}
+      >
+        <RotateCcw size={20} /> 撤銷上一筆
+      </button>
     </div>
   );
 }
