@@ -128,10 +128,11 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
                       <p className="font-black text-[#34C759] text-base">+${rec.amount}</p>
                       <div className="flex gap-0.5 mt-1 justify-end">
                         {rec.scores.map((s, i) => (
-                          <span key={i} className={`text-xs font-bold px-1 py-0.5 rounded-full ${
+                          <span key={i} className={`text-xs font-bold px-1.5 py-0.5 rounded-full flex flex-col items-center leading-tight ${
                             s > 0 ? 'bg-green-100 text-green-600' : s < 0 ? 'bg-red-100 text-red-500' : 'bg-gray-100 text-gray-400'
                           }`}>
-                            {s > 0 ? `+${s}` : s}
+                            <span className="text-[9px] opacity-60">{BASE_ROLES[i][0]}</span>
+                            <span>{s > 0 ? `+${s}` : s}</span>
                           </span>
                         ))}
                       </div>
