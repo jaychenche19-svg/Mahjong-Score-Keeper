@@ -1,6 +1,6 @@
 {
-  "name": "Mahjong Dog",
-  "short_name": "Mahjong Dog",
+  "name": "MJ Dog",
+  "short_name": "MJ Dog",
   "description": "Track mahjong scores with your crew.",
   "start_url": "/",
   "display": "standalone",
