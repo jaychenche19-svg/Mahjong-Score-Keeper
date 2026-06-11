@@ -225,7 +225,7 @@ export function useGameState() {
   const saveRecord = async (scores: number[], currentWinnerIdx: number, currentDealerIdx: number, currentRenZhuang: number) => {
     const winnerAmount = scores[currentWinnerIdx];
     if (isSinglePlayer) {
-      setHistory(prev => [{ id: Date.now(), winner: currentWinnerIdx, loser: loserIdx, amount: winnerAmount, scores }, ...prev]);
+      setHistory(prev => [{ id: Date.now(), winner: currentWinnerIdx, loser: loserIdx, amount: winnerAmount, scores, dealerIdx: currentDealerIdx }, ...prev]);
     } else {
       const resolve = (idx: number) =>
         customNames[idx] !== BASE_ROLES[idx] ? customNames[idx] : BASE_ROLE_SHORT[idx];

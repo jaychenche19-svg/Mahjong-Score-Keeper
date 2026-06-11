@@ -1,4 +1,5 @@
-import { Crown, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
+import { Crown, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
 import { BASE_ROLES } from '../../utils/constants';
 import type { HistoryRecord } from '../../types';
 
@@ -14,6 +15,8 @@ interface Props {
 }
 
 export function StatusTab({ customNames, myRole, dealerIdx, totalScores, historyEmpty, history, onUndoLast, hapticClick }: Props) {
+  const [historyOpen, setHistoryOpen] = useState(false);
+
   return (
     <div className="space-y-4 animate-in fade-in zoom-in-95 duration-500">
       {customNames.map((name, i) => {
@@ -55,52 +58,89 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
         <RotateCcw size={24} /> 撤銷上一筆
       </button>
 
-      {/* 歷史記錄列表 */}
+      {/* 歷史記錄收合區塊 */}
       {history.length > 0 && (
-        <div className="bg-white rounded-[2.5rem] p-6 shadow-sm space-y-3">
-          <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">對局紀錄</h3>
-          {history.map((rec, idx) => {
-            const roundNum = history.length - idx;
-            if (rec.isDraw) {
-              return (
-                <div key={rec.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-black text-gray-300 w-8">#{roundNum}</span>
-                    <span className="text-2xl">🌊</span>
-                    <span className="font-black text-gray-400">流局</span>
+        <div className="bg-white rounded-[2.5rem] shadow-sm overflow-hidden">
+          <button
+            className="w-full flex items-center justify-between px-6 py-5 active:bg-gray-50 transition-colors"
+            onClick={() => { hapticClick(); setHistoryOpen(o => !o); }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-base font-black text-gray-900">對局紀錄</span>
+              <span className="text-xs font-black text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
+                {history.length} 局
+              </span>
+            </div>
+            {historyOpen
+              ? <ChevronUp size={20} className="text-gray-400" />
+              : <ChevronDown size={20} className="text-gray-400" />}
+          </button>
+
+          {historyOpen && (
+            <div className="px-6 pb-4 space-y-1 border-t border-gray-50">
+              {history.map((rec, idx) => {
+                const roundNum = history.length - idx;
+                const recDealerIdx = rec.dealerIdx ?? -1;
+                const dealerName = recDealerIdx >= 0 ? customNames[recDealerIdx] : null;
+
+                if (rec.isDraw) {
+                  return (
+                    <div key={rec.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-black text-gray-300 w-8">#{roundNum}</span>
+                        <span className="text-xl">🌊</span>
+                        <div>
+                          <p className="font-black text-gray-400 text-sm">流局</p>
+                          {dealerName && (
+                            <p className="text-xs text-yellow-500 font-bold">👑 {dealerName} 連莊</p>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-gray-300">不計分</span>
+                    </div>
+                  );
+                }
+
+                const winnerName = rec.winner >= 0 ? customNames[rec.winner] : '-';
+                const isSelfDraw = rec.loser === -1;
+                const loserName = isSelfDraw ? null : (rec.loser >= 0 ? customNames[rec.loser] : '-');
+                const winnerIsDealer = rec.winner === recDealerIdx;
+
+                return (
+                  <div key={rec.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-black text-gray-300 w-8">#{roundNum}</span>
+                      <span className="text-xl">{isSelfDraw ? '✨' : '🔫'}</span>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-black text-gray-900 text-sm">{winnerName}</p>
+                          {winnerIsDealer && <span className="text-xs bg-yellow-100 text-yellow-600 font-black px-1.5 py-0.5 rounded-full">莊</span>}
+                        </div>
+                        <p className="text-xs font-bold text-gray-400">
+                          {isSelfDraw ? '自摸' : `${loserName} 放槍`}
+                          {dealerName && !winnerIsDealer && (
+                            <span className="text-yellow-500 ml-1">・{dealerName}莊</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-black text-[#34C759] text-base">+${rec.amount}</p>
+                      <div className="flex gap-0.5 mt-1 justify-end">
+                        {rec.scores.map((s, i) => (
+                          <span key={i} className={`text-xs font-bold px-1 py-0.5 rounded-full ${
+                            s > 0 ? 'bg-green-100 text-green-600' : s < 0 ? 'bg-red-100 text-red-500' : 'bg-gray-100 text-gray-400'
+                          }`}>
+                            {s > 0 ? `+${s}` : s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-sm font-bold text-gray-300">莊家連莊</span>
-                </div>
-              );
-            }
-            const winnerName = rec.winner >= 0 ? customNames[rec.winner] : '-';
-            const isSelfDraw = rec.loser === -1;
-            const loserName = isSelfDraw ? '自摸' : (rec.loser >= 0 ? customNames[rec.loser] : '-');
-            return (
-              <div key={rec.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-black text-gray-300 w-8">#{roundNum}</span>
-                  <span className="text-2xl">{isSelfDraw ? '✨' : '🔫'}</span>
-                  <div>
-                    <p className="font-black text-gray-900 text-base">{winnerName}</p>
-                    <p className="text-xs font-bold text-gray-400">{isSelfDraw ? '自摸' : `${loserName} 放槍`}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-black text-[#34C759] text-xl">+${rec.amount}</p>
-                  <div className="flex gap-1 mt-1">
-                    {rec.scores.map((s, i) => (
-                      <span key={i} className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                        s > 0 ? 'bg-green-100 text-green-600' : s < 0 ? 'bg-red-100 text-red-500' : 'bg-gray-100 text-gray-400'
-                      }`}>
-                        {s > 0 ? `+${s}` : s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

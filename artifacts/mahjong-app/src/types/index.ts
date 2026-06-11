@@ -22,6 +22,7 @@ export interface HistoryRecord {
   amount: number;
   scores: number[];
   isDraw?: boolean;
+  dealerIdx?: number;
 }
 
 export interface StatEntry {
