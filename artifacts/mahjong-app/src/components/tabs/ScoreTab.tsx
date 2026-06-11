@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Lock, Waves } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { calcPayment } from '../../utils/calcPayment';
 
 const MAX_TAI = 30;
@@ -110,7 +110,7 @@ export function ScoreTab({
             <div key={label} className="bg-gray-50 rounded-[2rem] p-5 text-center relative">
               <p className="text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">{label}</p>
               <div className="text-4xl font-black text-gray-400">{value}</div>
-              <Lock className="absolute top-3 right-3 text-gray-200" size={12} />
+              <Lock className="absolute top-3 right-3 text-gray-400" size={18} strokeWidth={2.5} />
             </div>
           ))}
         </div>
@@ -192,24 +192,15 @@ export function ScoreTab({
           {taiError && <p className="text-red-500 font-black text-sm">{taiError}</p>}
         </div>
 
-        <div className="grid grid-cols-5 gap-3">
-          <button
-            className="col-span-1 h-16 bg-gray-100 text-gray-500 font-black rounded-[2rem] btn-spring flex flex-col items-center justify-center gap-0.5"
-            onClick={onDraw}
-          >
-            <Waves size={18} />
-            <span className="text-xs">流局</span>
-          </button>
-          <button
-            className={`col-span-4 h-16 text-gray-900 text-xl font-black rounded-[2rem] btn-spring shadow-xl transition-opacity ${
-              taiError ? 'opacity-40 bg-gray-200 cursor-not-allowed' : 'bg-[#C7C7CC]'
-            }`}
-            onClick={handleRecord}
-            disabled={!!taiError}
-          >
-            確認紀錄
-          </button>
-        </div>
+        <button
+          className={`w-full h-16 text-gray-900 text-xl font-black rounded-[2rem] btn-spring shadow-xl transition-opacity ${
+            taiError ? 'opacity-40 bg-gray-200 cursor-not-allowed' : 'bg-[#C7C7CC]'
+          }`}
+          onClick={handleRecord}
+          disabled={!!taiError}
+        >
+          確認紀錄
+        </button>
       </div>
     </div>
   );

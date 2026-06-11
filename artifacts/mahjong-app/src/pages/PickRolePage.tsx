@@ -48,14 +48,18 @@ export function PickRolePage({
             return (
               <button
                 key={i}
-                disabled={taken}
+                disabled={taken && !selected}
                 onClick={() => !taken && onSelectRole(i)}
                 className={`h-40 rounded-[3rem] flex flex-col items-center justify-center transition-all border-none outline-none
-                  ${selected ? 'bg-[#3C3C3E] text-white scale-95 ring-4 ring-gray-200' : taken ? 'bg-gray-100 text-gray-300' : 'bg-white text-gray-400'}`}
+                  ${selected
+                    ? 'bg-[#3C3C3E] text-white scale-95 ring-4 ring-gray-200'
+                    : taken
+                    ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                    : 'bg-white text-gray-400'}`}
               >
                 <span className="text-5xl font-black mb-1">{role[0]}</span>
                 <span className="text-xs font-black">{role}</span>
-                {taken && <span className="text-xs text-gray-400 mt-1">已被選</span>}
+                {taken && !selected && <span className="text-xs text-gray-400 mt-1">已被選</span>}
               </button>
             );
           })}

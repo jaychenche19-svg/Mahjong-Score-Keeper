@@ -7,6 +7,7 @@ interface Props {
   base: number;
   taiValue: number;
   isSinglePlayer: boolean;
+  isJoiner: boolean;
   players: (Player | null)[];
   loading: boolean;
   copied: boolean;
@@ -21,17 +22,17 @@ interface Props {
 }
 
 export function ConfigSetupPage({
-  roomId, base, taiValue, isSinglePlayer, players, loading, copied, confirmConfig,
+  roomId, base, taiValue, isSinglePlayer, isJoiner, players, loading, copied, confirmConfig,
   onBaseChange, onTaiChange, onCopyRoomId, onStart, onBack, onConfirm, onCancel,
 }: Props) {
-  const isJoiner = !isSinglePlayer && players.some(p => p !== null);
-
   return (
     <div className="min-h-screen bg-[#F2F2F7] p-6 flex flex-col justify-center animate-in fade-in zoom-in-95 duration-500">
       <div className="bg-white rounded-[3rem] p-10 space-y-8 shadow-sm">
-        <div className="text-center mb-4">
-          <Calculator className="mx-auto text-gray-300" size={40} />
+
+        <div className="relative flex items-center justify-center">
+          <Calculator className="text-gray-300" size={40} />
         </div>
+
         <h2 className="text-4xl font-black text-center">底台設定</h2>
 
         {!isSinglePlayer && roomId && (
@@ -50,14 +51,14 @@ export function ConfigSetupPage({
           </div>
         )}
 
-        <div className="relative">
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { label: '底', value: base, onChange: onBaseChange },
-              { label: '台', value: taiValue, onChange: onTaiChange },
-            ].map(({ label, value, onChange }) => (
-              <div key={label} className="space-y-2 text-center">
-                <label className="text-gray-400 font-black text-sm uppercase">{label}</label>
+        <div className="grid grid-cols-2 gap-4">
+          {[
+            { label: '底', value: base, onChange: onBaseChange },
+            { label: '台', value: taiValue, onChange: onTaiChange },
+          ].map(({ label, value, onChange }) => (
+            <div key={label} className="space-y-2 text-center">
+              <label className="text-gray-400 font-black text-sm uppercase">{label}</label>
+              <div className="relative">
                 <input
                   type="text"
                   inputMode="numeric"
@@ -72,17 +73,19 @@ export function ConfigSetupPage({
                   readOnly={isJoiner}
                   className={`w-full h-20 border-none rounded-2xl text-center font-black text-4xl focus:outline-none ${isJoiner ? 'bg-gray-100 text-gray-400' : 'bg-gray-50'}`}
                 />
+                {isJoiner && (
+                  <div className="absolute top-2 right-2">
+                    <Lock size={20} className="text-gray-400" strokeWidth={2.5} />
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-
-          {isJoiner && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl">
-              <Lock size={36} className="text-gray-400" />
-              <p className="text-xs text-gray-400 font-black">底台由房主設定，無法更改</p>
             </div>
-          )}
+          ))}
         </div>
+
+        {isJoiner && (
+          <p className="text-center text-xs text-gray-400 font-black">底台由房主設定，無法更改</p>
+        )}
 
         <button
           className="w-full h-20 bg-[#C7C7CC] text-gray-900 rounded-[2rem] font-black text-xl border-none btn-spring"

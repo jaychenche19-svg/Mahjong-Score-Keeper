@@ -25,12 +25,12 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
         return (
           <div
             key={i}
-            className={`p-8 rounded-[3.5rem] flex justify-between items-center border-2
+            className={`p-8 rounded-[3.5rem] flex justify-between items-center border-2 transition-all duration-300
               ${isMe ? 'bg-blue-50 border-blue-200' : 'bg-white border-transparent shadow-sm'}
               ${isDealer ? 'ring-4 ring-yellow-400/30' : ''}`}
           >
             <div className="flex items-center gap-6">
-              <div className={`w-20 h-20 rounded-[2rem] flex flex-col items-center justify-center font-black
+              <div className={`w-20 h-20 rounded-[2rem] flex flex-col items-center justify-center font-black transition-all duration-300
                 ${isDealer ? 'bg-yellow-400 text-gray-900 scale-110 shadow-lg' : 'bg-gray-100 text-gray-400'}`}>
                 {isDealer && <Crown size={18} className="mb-1 animate-bounce" />}
                 <span className="text-3xl">{BASE_ROLES[i][0]}</span>
@@ -43,7 +43,7 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
                 {isDealer && <span className="text-xs font-black text-yellow-600 tracking-widest">莊家連莊中</span>}
               </div>
             </div>
-            <div className={`text-5xl font-black ${totalScores[i] >= 0 ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
+            <div className={`text-5xl font-black transition-all duration-500 ${totalScores[i] >= 0 ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
               {totalScores[i] >= 0 ? `+${totalScores[i]}` : totalScores[i]}
             </div>
           </div>
@@ -52,10 +52,11 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
 
       {/* 歷史記錄收合區塊 */}
       {history.length > 0 && (
-        <div className="bg-white rounded-[2.5rem] shadow-sm overflow-hidden">
+        <div className="bg-white rounded-[2.5rem] shadow-sm overflow-hidden transition-all duration-300">
           <button
-            className="w-full flex items-center justify-between px-6 py-5 active:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-between px-6 py-5 active:bg-gray-50 active:scale-98 transition-all duration-150"
             onClick={() => { hapticClick(); setHistoryOpen(o => !o); }}
+            style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             <div className="flex items-center gap-3">
               <span className="text-base font-black text-gray-900">對局紀錄</span>
@@ -63,12 +64,12 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
                 {history.length} 局
               </span>
             </div>
-            {historyOpen
-              ? <ChevronUp size={20} className="text-gray-400" />
-              : <ChevronDown size={20} className="text-gray-400" />}
+            <div className={`transition-transform duration-300 ${historyOpen ? 'rotate-180' : 'rotate-0'}`}>
+              <ChevronDown size={20} className="text-gray-400" />
+            </div>
           </button>
 
-          {historyOpen && (
+          <div className={`transition-all duration-400 ease-in-out overflow-hidden ${historyOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
             <div className="px-6 pb-4 space-y-1 border-t border-gray-50">
               {history.map((rec, idx) => {
                 const roundNum = history.length - idx;
@@ -77,7 +78,7 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
 
                 if (rec.isDraw) {
                   return (
-                    <div key={rec.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                    <div key={rec.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0 animate-in fade-in duration-300">
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-black text-gray-300 w-8">#{roundNum}</span>
                         <span className="text-xl">🌊</span>
@@ -99,7 +100,7 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
                 const winnerIsDealer = rec.winner === recDealerIdx;
 
                 return (
-                  <div key={rec.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                  <div key={rec.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0 animate-in fade-in duration-300">
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-black text-gray-300 w-8">#{roundNum}</span>
                       <span className="text-xl">{isSelfDraw ? '✨' : '🔫'}</span>
@@ -133,14 +134,15 @@ export function StatusTab({ customNames, myRole, dealerIdx, totalScores, history
                 );
               })}
             </div>
-          )}
+          </div>
         </div>
       )}
 
       <button
-        className={`w-full h-16 text-gray-300 border-none text-base font-bold flex items-center justify-center gap-2 transition-opacity ${historyEmpty ? 'opacity-30' : ''}`}
+        className={`w-full h-16 text-gray-300 border-none text-base font-bold flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 ${historyEmpty ? 'opacity-30' : 'active:text-gray-500'}`}
         onClick={() => { hapticClick(); onUndoLast(); }}
         disabled={historyEmpty}
+        style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         <RotateCcw size={20} /> 撤銷上一筆
       </button>

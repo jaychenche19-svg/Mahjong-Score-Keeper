@@ -15,12 +15,12 @@ export function Header({ customNames, myRole, roomId, isSinglePlayer, onLogoClic
       </div>
       <div className="flex items-center gap-2">
         {!isSinglePlayer && (
-          <span className="text-xs font-black text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+          <span className="text-xs font-black text-gray-400 bg-gray-100 px-3 py-1 rounded-full flex items-center justify-center leading-none">
             {roomId}
           </span>
         )}
-        <div className="px-4 py-2 bg-[#C7C7CC] rounded-full">
-          <span className="text-xs font-black text-gray-900">{customNames[myRole]}</span>
+        <div className="px-4 py-2 bg-[#C7C7CC] rounded-full flex items-center justify-center min-w-[48px] h-9">
+          <span className="text-xs font-black text-gray-900 leading-none">{customNames[myRole]}</span>
         </div>
       </div>
     </header>

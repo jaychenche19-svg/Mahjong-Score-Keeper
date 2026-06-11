@@ -69,17 +69,16 @@ export default function MahjongApp() {
       roomId={g.roomId}
       players={g.players}
       confirmConfig={g.confirmConfig}
-      onSelectRole={i => { g.hapticClick(); g.setMyRole(i); }}
+      onSelectRole={g.handleSelectSeat}
       onConfirmRole={() => {
         g.hapticClick();
         g.setMyName(g.defaultNameSetting);
         g.setView('nameSetup');
       }}
-      onBack={() => {
+      onBack={async () => {
         g.hapticClick();
         if (g.isSinglePlayer) { g.setView('landing'); return; }
-        if (g.players.some(p => p !== null)) { g.setView('joinRoom'); }
-        else { g.handleBackFromSetup(); }
+        await g.handleBackFromSetup();
       }}
       {...confirmHandlers}
     />
@@ -111,13 +110,13 @@ export default function MahjongApp() {
   );
 
   if (g.view === 'configSetup') {
-    const isJoiner = !g.isSinglePlayer && g.players.some(p => p !== null);
     return (
       <ConfigSetupPage
         roomId={g.roomId}
         base={g.base}
         taiValue={g.taiValue}
         isSinglePlayer={g.isSinglePlayer}
+        isJoiner={g.isJoiner}
         players={g.players}
         loading={g.loading}
         copied={g.copied}
@@ -138,11 +137,15 @@ export default function MahjongApp() {
             g.setCustomNames(n);
             g.setView('app');
           } else {
-            g.triggerConfirm(
-              '確定開始遊戲嗎？',
-              () => g.handleStartGame(isJoiner),
-              <p className="text-xs text-red-500 font-bold">⚠️ 確認後進入遊戲將無法更改底台</p>
-            );
+            if (g.isJoiner) {
+              g.handleStartGame(true);
+            } else {
+              g.triggerConfirm(
+                '確定開始遊戲嗎？',
+                () => g.handleStartGame(false),
+                <p className="text-xs text-red-500 font-bold">⚠️ 確認後進入遊戲將無法更改底台</p>
+              );
+            }
           }
         }}
         onBack={() => { g.hapticClick(); g.setView('nameSetup'); }}
@@ -176,7 +179,6 @@ export default function MahjongApp() {
       onLoserChange={g.setLoserIdx}
       onHuTaiChange={g.setHuTai}
       onSaveRecord={g.saveRecord}
-      onDraw={g.handleDraw}
       onUndoLast={g.handleUndoLast}
       onReset={g.handleReset}
       onBackToHome={g.handleBackToHome}

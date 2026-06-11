@@ -1,8 +1,8 @@
 import { useState, useRef, type ReactNode } from 'react';
 import {
   supabase, dbFetchPlayers, dbFetchHistory, dbJoinRoom, dbSubscribeRoom,
-  dbInsertRoom, dbInsertPlayer, dbInsertRecord, dbDeleteRecord,
-  dbDeleteRoomRecords, dbUpdateRoomState,
+  dbInsertPlayer, dbInsertRecord, dbDeleteRecord,
+  dbDeleteRoomRecords, dbUpdateRoomState, dbSelectSeat, dbReleaseSeat,
 } from '../lib/supabase';
 import { generateRoomId } from '../utils/calcPayment';
 import { BASE_ROLES, BASE_ROLE_SHORT, DEFAULT_BASE, DEFAULT_TAI } from '../utils/constants';
@@ -14,9 +14,9 @@ const INIT_PLAYERS: (Player | null)[] = [null, null, null, null];
 
 export function useGameState() {
   const [view, setView] = useState('landing');
-
   const [myRole, setMyRole] = useState(-1);
   const [isSinglePlayer, setIsSinglePlayer] = useState(false);
+  const [isJoiner, setIsJoiner] = useState(false);
   const [myName, setMyName] = useState('');
   const [customNames, setCustomNames] = useState<string[]>([...INIT_NAMES]);
 
@@ -61,6 +61,18 @@ export function useGameState() {
     subsRef.current = [];
   };
 
+  const fetchRoomPlayers = async (rid: string) => {
+    const { data } = await supabase
+      .from('players')
+      .select('*')
+      .eq('room_id', rid);
+    const arr: (Player | null)[] = [null, null, null, null];
+    (data ?? []).forEach((p: any) => {
+      arr[p.role_idx] = { role_idx: p.role_idx, name: p.name } as Player;
+    });
+    setPlayers(arr);
+  };
+
   const fetchPlayers = async (rid: string) => {
     const data = await dbFetchPlayers(rid);
     const arr: (Player | null)[] = [null, null, null, null];
@@ -79,9 +91,13 @@ export function useGameState() {
   const subscribeRoom = (rid: string) => {
     clearSubs();
     const channels = dbSubscribeRoom(rid, {
-      onPlayersChange: () => fetchPlayers(rid),
+      onPlayersChange: () => fetchRoomPlayers(rid),
       onHistoryChange: () => fetchHistory(rid),
-      onRoomUpdate: (ren) => setRenZhuang(ren),
+      onRoomUpdate: (roomData) => {
+        setRenZhuang(roomData.ren_zhuang);
+        setBase(roomData.bottom);
+        setTaiValue(roomData.units);
+      },
     });
     subsRef.current = channels;
   };
@@ -93,12 +109,22 @@ export function useGameState() {
     await dbUpdateRoomState(roomId, dealerName, ren);
   };
 
-  const handleBackFromSetup = () => {
+  const handleBackFromSetup = async () => {
     hapticClick();
     clearSubs();
+    if (roomId && myRole !== -1) {
+      await supabase.from('players')
+        .delete()
+        .eq('room_id', roomId)
+        .eq('role_idx', myRole);
+    }
+    if (roomId && !isJoiner) {
+      await supabase.from('rooms').delete().eq('id', roomId).eq('is_confirmed', false);
+    }
     setRoomId('');
     setMyRole(-1);
     setMyName('');
+    setIsJoiner(false);
     setPlayers([...INIT_PLAYERS]);
     setView('landing');
   };
@@ -106,31 +132,75 @@ export function useGameState() {
   const handleBackToHome = () => {
     triggerConfirm(
       '確定要返回主畫面嗎？',
-      () => {
+      async () => {
         clearSubs();
+        // 釋放自己的座位
+        if (roomId && myRole !== -1) {
+          await supabase.from('players')
+            .delete()
+            .eq('room_id', roomId)
+            .eq('role_idx', myRole);
+        }
         setHistory([]); setView('landing'); setMyRole(-1);
         setHuTai(''); setRenZhuang(0); setDealerIdx(0);
         setWinnerIdx(0); setLoserIdx(-1);
         setCustomNames([...INIT_NAMES]);
         setBase(DEFAULT_BASE); setTaiValue(DEFAULT_TAI); setRoomId('');
         setJoinInput(''); setJoinError(''); setPlayers([...INIT_PLAYERS]);
-        setIsSinglePlayer(false); setMyName(''); setActiveTab('score');
+        setIsSinglePlayer(false); setIsJoiner(false); setMyName(''); setActiveTab('score');
       },
       <p className="text-gray-500">目前的對局紀錄將會被清空。</p>
     );
   };
 
-  const handleCreateRoom = () => {
+  const handleCreateRoom = async () => {
     hapticClick();
     let id = generateRoomId();
     while (id.startsWith('0')) id = generateRoomId();
+    setLoading(true);
+    await supabase.from('rooms').insert({
+      id,
+      bottom: DEFAULT_BASE,
+      units: DEFAULT_TAI,
+      dealer: '東',
+      ren_zhuang: 0,
+      east_name: '東',
+      south_name: '南',
+      west_name: '西',
+      north_name: '北',
+      is_confirmed: false,
+    });
     setRoomId(id);
     setBase(DEFAULT_BASE);
     setTaiValue(DEFAULT_TAI);
     setIsSinglePlayer(false);
+    setIsJoiner(false);
     setPlayers([...INIT_PLAYERS]);
     setMyRole(-1);
+    subscribeRoom(id);
+    setLoading(false);
     setView('pickRole');
+  };
+
+  const handleSelectSeat = async (i: number) => {
+    hapticClick();
+    if (isSinglePlayer) { setMyRole(i); return; }
+    if (players[i] !== null) return;
+    if (myRole !== -1 && myRole !== i) {
+      await supabase.from('players')
+        .delete()
+        .eq('room_id', roomId)
+        .eq('role_idx', myRole);
+    }
+    if (myRole !== i) {
+      await supabase.from('players').upsert({
+        room_id: roomId,
+        role_idx: i,
+        name: '__pending__',
+      }, { onConflict: 'room_id,role_idx' });
+    }
+    setMyRole(i);
+    await fetchRoomPlayers(roomId);
   };
 
   const handleJoinRoom = async () => {
@@ -143,18 +213,32 @@ export function useGameState() {
       setLoading(false);
       return;
     }
-    const result = await dbJoinRoom(rid);
-    if (!result) { setJoinError('查無此房間'); setLoading(false); return; }
-    if (result.players.length >= 4) { setJoinError('此房間人數已滿'); setLoading(false); return; }
+    const { data: room, error } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('id', rid)
+      .single();
+    if (error || !room) { setJoinError('查無此房間'); setLoading(false); return; }
 
-    const { room, players: ps } = result;
+    const { data: existingPlayers } = await supabase
+      .from('players')
+      .select('*')
+      .eq('room_id', rid);
+
+    const arr: (Player | null)[] = [null, null, null, null];
+    (existingPlayers ?? []).forEach((p: any) => {
+      arr[p.role_idx] = { role_idx: p.role_idx, name: p.name } as Player;
+    });
+
+    const takenCount = arr.filter(p => p !== null).length;
+    if (takenCount >= 4) { setJoinError('此房間人數已滿'); setLoading(false); return; }
+
     setRoomId(rid);
     setBase(room.bottom);
     setTaiValue(room.units);
     setRenZhuang(room.ren_zhuang);
-    const arr: (Player | null)[] = [null, null, null, null];
-    ps.forEach(p => { arr[p.role_idx] = p; });
     setPlayers(arr);
+    setIsJoiner(true);
     setLoading(false);
     subscribeRoom(rid);
     setView('pickRole');
@@ -164,8 +248,12 @@ export function useGameState() {
     setLoading(true);
     try {
       const name = myName || BASE_ROLE_SHORT[myRole];
+      await supabase.from('players')
+        .delete()
+        .eq('room_id', roomId)
+        .eq('role_idx', myRole)
+        .eq('name', '__pending__');
       await dbInsertPlayer(roomId, myRole, name);
-      subscribeRoom(roomId);
       await fetchPlayers(roomId);
       await fetchHistory(roomId);
       setView('app');
@@ -176,17 +264,19 @@ export function useGameState() {
     }
   };
 
-  const handleStartGame = async (isJoiner: boolean) => {
-    if (!isJoiner) {
+  const handleStartGame = async (isJoinerParam: boolean) => {
+    if (!isJoinerParam) {
       const resolveName = (i: number) =>
         customNames[i] !== BASE_ROLES[i] ? customNames[i] : BASE_ROLE_SHORT[i];
-      const { error } = await dbInsertRoom({
-        id: roomId, bottom: base, units: taiValue,
+      const { error } = await supabase.from('rooms').update({
+        bottom: base,
+        units: taiValue,
         dealer: resolveName(dealerIdx),
         ren_zhuang: renZhuang,
         east_name: resolveName(0), south_name: resolveName(1),
         west_name: resolveName(2), north_name: resolveName(3),
-      });
+        is_confirmed: true,
+      }).eq('id', roomId);
       if (error) return;
     }
     await handleJoinWithRole();
@@ -202,36 +292,16 @@ export function useGameState() {
     if (!isSinglePlayer) await updateRoomState(dealerIdx, val);
   };
 
-  // 自動換莊邏輯
-  const autoAdvanceDealer = async (winnerIdx: number, currentDealerIdx: number, currentRenZhuang: number) => {
-    const winnerIsDealer = winnerIdx === currentDealerIdx;
-    let newDealerIdx = currentDealerIdx;
-    let newRenZhuang = currentRenZhuang;
-
-    if (winnerIsDealer) {
-      // 莊家贏 → 連莊
-      newRenZhuang = currentRenZhuang + 1;
-    } else {
-      // 非莊家贏 → 換莊，連莊歸零
-      newDealerIdx = (currentDealerIdx + 1) % 4;
-      newRenZhuang = 0;
-    }
-
-    setDealerIdx(newDealerIdx);
-    setRenZhuang(newRenZhuang);
-    if (!isSinglePlayer) await updateRoomState(newDealerIdx, newRenZhuang);
-  };
-
-  const saveRecord = async (scores: number[], currentWinnerIdx: number, currentDealerIdx: number, currentRenZhuang: number) => {
-    const winnerAmount = scores[currentWinnerIdx];
+  const saveRecord = async (scores: number[]) => {
+    const winnerAmount = scores[winnerIdx];
     if (isSinglePlayer) {
-      setHistory(prev => [{ id: Date.now(), winner: currentWinnerIdx, loser: loserIdx, amount: winnerAmount, scores, dealerIdx: currentDealerIdx }, ...prev]);
+      setHistory(prev => [{ id: Date.now(), winner: winnerIdx, loser: loserIdx, amount: winnerAmount, scores }, ...prev]);
     } else {
       const resolve = (idx: number) =>
         customNames[idx] !== BASE_ROLES[idx] ? customNames[idx] : BASE_ROLE_SHORT[idx];
       await dbInsertRecord({
         room_id: roomId,
-        winner: resolve(currentWinnerIdx),
+        winner: resolve(winnerIdx),
         loser: loserIdx === -1 ? '自摸' : resolve(loserIdx),
         total_win: winnerAmount,
         east_change: scores[0], south_change: scores[1],
@@ -240,66 +310,15 @@ export function useGameState() {
       await fetchHistory(roomId);
     }
     setHuTai('');
-    // 自動換莊
-    await autoAdvanceDealer(currentWinnerIdx, currentDealerIdx, currentRenZhuang);
-  };
-
-  // 流局：莊家連莊，不記分
-  const handleDraw = async () => {
-    hapticClick();
-    triggerConfirm(
-      '流局？',
-      async () => {
-        // 流局只需連莊，不算分
-        const newRen = renZhuang + 1;
-        setRenZhuang(newRen);
-        if (!isSinglePlayer) await updateRoomState(dealerIdx, newRen);
-        // 記一筆流局紀錄（isDraw=true，scores全0）
-        const drawRecord: HistoryRecord = {
-          id: Date.now(),
-          winner: -1,
-          loser: -1,
-          amount: 0,
-          scores: [0, 0, 0, 0],
-          isDraw: true,
-        };
-        if (isSinglePlayer) {
-          setHistory(prev => [drawRecord, ...prev]);
-        } else {
-          await dbInsertRecord({
-            room_id: roomId,
-            winner: '流局',
-            loser: '流局',
-            total_win: 0,
-            east_change: 0, south_change: 0,
-            west_change: 0, north_change: 0,
-          });
-          await fetchHistory(roomId);
-        }
-      },
-      <p className="text-gray-500">莊家連莊，本局不計分。</p>
-    );
   };
 
   const handleUndoLast = () => {
     if (history.length === 0) return;
     triggerConfirm('撤銷上一筆？', async () => {
-      const last = history[0];
       if (isSinglePlayer) {
         setHistory(prev => prev.slice(1));
-        // 撤銷換莊：往回推
-        if (!last.isDraw) {
-          const prevDealer = last.winner === dealerIdx
-            ? dealerIdx  // 上一筆是連莊，還原連莊數
-            : (dealerIdx + 3) % 4; // 上一筆換了莊，還原
-          const prevRen = last.winner === dealerIdx ? Math.max(0, renZhuang - 1) : 0;
-          setDealerIdx(prevDealer);
-          setRenZhuang(prevRen);
-        } else {
-          setRenZhuang(Math.max(0, renZhuang - 1));
-        }
       } else {
-        await dbDeleteRecord(last.id);
+        await dbDeleteRecord(history[0].id);
         await fetchHistory(roomId);
       }
     });
@@ -307,12 +326,7 @@ export function useGameState() {
 
   const handleReset = () => {
     triggerConfirm('重啟一將？', async () => {
-      if (isSinglePlayer) {
-        setHistory([]);
-        setDealerIdx(0);
-        setRenZhuang(0);
-        return;
-      }
+      if (isSinglePlayer) { setHistory([]); return; }
       await dbDeleteRoomRecords(roomId);
       await updateRoomState(0, 0);
     });
@@ -330,7 +344,7 @@ export function useGameState() {
   const selfDrawKing = history.length > 0 ? [...stats].sort((a, b) => b.selfDrawCount - a.selfDrawCount)[0] : null;
 
   return {
-    view, myRole, isSinglePlayer, customNames, myName, roomId, players,
+    view, myRole, isSinglePlayer, isJoiner, customNames, myName, roomId, players,
     loading, joinInput, joinError, copied, base, taiValue, history,
     dealerIdx, renZhuang, winnerIdx, loserIdx, huTai, activeTab,
     confirmConfig, defaultNameSetting, settingsOpen, tempName, vibrationEnabled,
@@ -341,10 +355,10 @@ export function useGameState() {
     setDefaultNameSetting, setSettingsOpen, setTempName, setVibrationEnabled,
     setWinnerIdx, setLoserIdx, setHuTai, setDealerIdx, setRenZhuang,
     hapticClick, hapticSlide, triggerConfirm,
-    fetchPlayers, fetchHistory,
+    fetchPlayers, fetchHistory, fetchRoomPlayers,
     handleCreateRoom, handleJoinRoom, handleJoinWithRole,
     handleStartGame, handleBackFromSetup, handleBackToHome,
-    handleDealerChange, handleRenZhuangChange,
-    saveRecord, handleUndoLast, handleReset, handleDraw,
+    handleDealerChange, handleRenZhuangChange, handleSelectSeat,
+    saveRecord, handleUndoLast, handleReset,
   };
 }
