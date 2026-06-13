@@ -1,8 +1,23 @@
+import { useState, useRef } from 'react';
 import { PlusCircle, Users, User, Settings } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import type { ConfirmConfig } from '../types';
 
 const BTN_GRAY = 'bg-[#D1D1D6] text-gray-900 border-none shadow-none';
+
+const checkNameError = (val: string): string => {
+  if (!val) return '';
+  const hasOther = /[^a-zA-Z\u4e00-\u9fa5]/.test(val);
+  if (hasOther) {
+    if (/[0-9]/.test(val)) return '不可以輸入數字';
+    return '不可以輸入符號';
+  }
+  const chineseCount = (val.match(/[\u4e00-\u9fa5]/g) || []).length;
+  const englishCount = (val.match(/[a-zA-Z]/g) || []).length;
+  if (chineseCount > 5) return '中文名稱不可超過五個字';
+  if (englishCount > 7) return '英文名稱不可超過七個字母';
+  return '';
+};
 
 interface Props {
   loading: boolean;
@@ -28,6 +43,21 @@ export function LandingPage({
   onCreateRoom, onJoinRoom, onSinglePlayer, onOpenSettings, onCloseSettings,
   onSaveSettings, onTempNameChange, onVibrationToggle, onConfirm, onCancel,
 }: Props) {
+  const [nameError, setNameError] = useState('');
+  const composing = useRef(false);
+
+  const handleNameChange = (val: string) => {
+    onTempNameChange(val);
+    if (!composing.current) setNameError(checkNameError(val));
+  };
+
+  const handleSave = () => {
+    const err = checkNameError(tempName);
+    if (err) { setNameError(err); return; }
+    setNameError('');
+    onSaveSettings();
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#F2F2F7] p-8 relative">
       <button
@@ -72,12 +102,19 @@ export function LandingPage({
             <div className="space-y-2">
               <label className="text-sm font-black text-gray-400 block ml-1">預設玩家名稱</label>
               <input
-                placeholder="未設定 (使用風向作名稱)"
+                placeholder="未設定"
                 className="w-full h-14 border-none bg-gray-100 rounded-2xl text-center font-black text-xl focus:outline-none"
                 value={tempName}
-                onChange={e => onTempNameChange(e.target.value)}
-                maxLength={8}
+                onChange={e => handleNameChange(e.target.value)}
+                onCompositionStart={() => { composing.current = true; setNameError(''); }}
+                onCompositionEnd={e => {
+                  composing.current = false;
+                  setNameError(checkNameError((e.target as HTMLInputElement).value));
+                }}
               />
+              {nameError && (
+                <p className="text-red-500 text-xs font-black text-center">{nameError}</p>
+              )}
             </div>
 
             <div className="flex items-center justify-between bg-gray-50 p-4 rounded-2xl">
@@ -94,7 +131,7 @@ export function LandingPage({
             <div className="flex flex-col gap-3 pt-2">
               <button
                 type="button"
-                onClick={onSaveSettings}
+                onClick={handleSave}
                 className="w-full py-4 bg-[#C7C7CC] text-gray-900 rounded-[1.8rem] text-xl font-black btn-spring"
               >
                 儲存並關閉

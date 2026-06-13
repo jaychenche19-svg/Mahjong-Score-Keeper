@@ -21,6 +21,15 @@ interface Props {
   onCancel: () => void;
 }
 
+const getFontSize = (val: number | string) => {
+  const len = String(val).length;
+  if (len <= 4) return '2.5rem';
+  if (len <= 6) return '1.8rem';
+  if (len <= 8) return '1.3rem';
+  if (len <= 10) return '1rem';
+  return '0.75rem';
+};
+
 export function ConfigSetupPage({
   roomId, base, taiValue, isSinglePlayer, isJoiner, players, loading, copied, confirmConfig,
   onBaseChange, onTaiChange, onCopyRoomId, onStart, onBack, onConfirm, onCancel,
@@ -57,22 +66,31 @@ export function ConfigSetupPage({
             { label: '台', value: taiValue, onChange: onTaiChange },
           ].map(({ label, value, onChange }) => (
             <div key={label} className="space-y-2 text-center">
-              <label className="text-gray-400 font-black text-sm uppercase">{label}</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={value}
-                  onChange={e => {
-                    if (!isJoiner) {
+              <label className="text-base text-gray-400 font-black uppercase">{label}</label>
+              <div className="relative w-full h-24 rounded-2xl overflow-hidden flex items-center justify-center"
+                style={{ background: isJoiner ? '#f3f4f6' : '#f9fafb' }}
+              >
+                {isJoiner ? (
+                  <span
+                    className="font-black text-gray-400 px-2 w-full text-center"
+                    style={{ fontSize: getFontSize(value) }}
+                  >
+                    {value}
+                  </span>
+                ) : (
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={value}
+                    onChange={e => {
                       const val = e.target.value.replace(/\D/g, '');
                       onChange(val === '' ? 0 : Number(val));
-                    }
-                  }}
-                  readOnly={isJoiner}
-                  className={`w-full h-20 border-none rounded-2xl text-center font-black text-4xl focus:outline-none ${isJoiner ? 'bg-gray-100 text-gray-400' : 'bg-gray-50'}`}
-                />
+                    }}
+                    className="absolute inset-0 w-full h-full border-none bg-transparent text-center font-black focus:outline-none px-2"
+                    style={{ fontSize: getFontSize(value) }}
+                  />
+                )}
                 {isJoiner && (
                   <div className="absolute top-2 right-2">
                     <Lock size={20} className="text-gray-400" strokeWidth={2.5} />

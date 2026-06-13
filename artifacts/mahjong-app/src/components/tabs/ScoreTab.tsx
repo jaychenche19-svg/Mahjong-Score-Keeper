@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Lock } from 'lucide-react';
 import { calcPayment } from '../../utils/calcPayment';
 
-const MAX_TAI = 50;
+const MAX_TAI = 30;
 
 interface Props {
   base: number;
@@ -107,14 +107,9 @@ export function ScoreTab({
       <div className="bg-white rounded-[2.5rem] p-3 shadow-sm">
         <div className="grid grid-cols-2 gap-3">
           {[{ label: '底', value: base }, { label: '台', value: taiValue }].map(({ label, value }) => (
-            <div key={label} className="bg-gray-50 rounded-[2rem] p-5 text-center relative overflow-hidden">
+            <div key={label} className="bg-gray-50 rounded-[2rem] p-5 text-center relative">
               <p className="text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">{label}</p>
-              <div
-                className="font-black text-gray-400 leading-none"
-                style={{ fontSize: 'clamp(1rem, 8vw, 2.5rem)' }}
-              >
-                {value}
-              </div>
+              <div className="text-4xl font-black text-gray-400">{value}</div>
               <Lock className="absolute top-3 right-3 text-gray-400" size={18} strokeWidth={2.5} />
             </div>
           ))}

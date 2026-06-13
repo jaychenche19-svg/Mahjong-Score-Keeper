@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { useGameState } from './hooks/useGameState';
 import { LandingPage } from './pages/LandingPage';
 import { JoinRoomPage } from './pages/JoinRoomPage';

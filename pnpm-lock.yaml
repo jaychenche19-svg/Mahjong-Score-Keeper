@@ -43,7 +43,7 @@ catalogs:
       specifier: ^0.45.2
       version: 0.45.2
     framer-motion:
-      specifier: ^12.23.24
+      specifier: 12.38.0
       version: 12.38.0
     lucide-react:
       specifier: ^0.545.0
@@ -156,6 +156,10 @@ overrides:
 importers:
 
   .:
+    dependencies:
+      framer-motion:
+        specifier: 'catalog:'
+        version: 12.38.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
     devDependencies:
       prettier:
         specifier: ^3.8.3

@@ -62,10 +62,7 @@ export function useGameState() {
   };
 
   const fetchRoomPlayers = async (rid: string) => {
-    const { data } = await supabase
-      .from('players')
-      .select('*')
-      .eq('room_id', rid);
+    const { data } = await supabase.from('players').select('*').eq('room_id', rid);
     const arr: (Player | null)[] = [null, null, null, null];
     (data ?? []).forEach((p: any) => {
       arr[p.role_idx] = { role_idx: p.role_idx, name: p.name } as Player;
@@ -113,10 +110,7 @@ export function useGameState() {
     hapticClick();
     clearSubs();
     if (roomId && myRole !== -1) {
-      await supabase.from('players')
-        .delete()
-        .eq('room_id', roomId)
-        .eq('role_idx', myRole);
+      await supabase.from('players').delete().eq('room_id', roomId).eq('role_idx', myRole);
     }
     if (roomId && !isJoiner) {
       await supabase.from('rooms').delete().eq('id', roomId).eq('is_confirmed', false);
@@ -134,12 +128,8 @@ export function useGameState() {
       '確定要返回主畫面嗎？',
       async () => {
         clearSubs();
-        // 釋放自己的座位
         if (roomId && myRole !== -1) {
-          await supabase.from('players')
-            .delete()
-            .eq('room_id', roomId)
-            .eq('role_idx', myRole);
+          await supabase.from('players').delete().eq('room_id', roomId).eq('role_idx', myRole);
         }
         setHistory([]); setView('landing'); setMyRole(-1);
         setHuTai(''); setRenZhuang(0); setDealerIdx(0);
@@ -187,16 +177,11 @@ export function useGameState() {
     if (isSinglePlayer) { setMyRole(i); return; }
     if (players[i] !== null) return;
     if (myRole !== -1 && myRole !== i) {
-      await supabase.from('players')
-        .delete()
-        .eq('room_id', roomId)
-        .eq('role_idx', myRole);
+      await supabase.from('players').delete().eq('room_id', roomId).eq('role_idx', myRole);
     }
     if (myRole !== i) {
       await supabase.from('players').upsert({
-        room_id: roomId,
-        role_idx: i,
-        name: '__pending__',
+        room_id: roomId, role_idx: i, name: '__pending__',
       }, { onConflict: 'room_id,role_idx' });
     }
     setMyRole(i);
@@ -208,31 +193,16 @@ export function useGameState() {
     setLoading(true);
     setJoinError('');
     const rid = joinInput.trim();
-    if (rid.length < 5) {
-      setJoinError('查無此房間');
-      setLoading(false);
-      return;
-    }
-    const { data: room, error } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('id', rid)
-      .single();
+    if (rid.length < 5) { setJoinError('查無此房間'); setLoading(false); return; }
+    const { data: room, error } = await supabase.from('rooms').select('*').eq('id', rid).single();
     if (error || !room) { setJoinError('查無此房間'); setLoading(false); return; }
-
-    const { data: existingPlayers } = await supabase
-      .from('players')
-      .select('*')
-      .eq('room_id', rid);
-
+    const { data: existingPlayers } = await supabase.from('players').select('*').eq('room_id', rid);
     const arr: (Player | null)[] = [null, null, null, null];
     (existingPlayers ?? []).forEach((p: any) => {
       arr[p.role_idx] = { role_idx: p.role_idx, name: p.name } as Player;
     });
-
     const takenCount = arr.filter(p => p !== null).length;
     if (takenCount >= 4) { setJoinError('此房間人數已滿'); setLoading(false); return; }
-
     setRoomId(rid);
     setBase(room.bottom);
     setTaiValue(room.units);
@@ -248,11 +218,7 @@ export function useGameState() {
     setLoading(true);
     try {
       const name = myName || BASE_ROLE_SHORT[myRole];
-      await supabase.from('players')
-        .delete()
-        .eq('room_id', roomId)
-        .eq('role_idx', myRole)
-        .eq('name', '__pending__');
+      await supabase.from('players').delete().eq('room_id', roomId).eq('role_idx', myRole).eq('name', '__pending__');
       await dbInsertPlayer(roomId, myRole, name);
       await fetchPlayers(roomId);
       await fetchHistory(roomId);
@@ -269,10 +235,8 @@ export function useGameState() {
       const resolveName = (i: number) =>
         customNames[i] !== BASE_ROLES[i] ? customNames[i] : BASE_ROLE_SHORT[i];
       const { error } = await supabase.from('rooms').update({
-        bottom: base,
-        units: taiValue,
-        dealer: resolveName(dealerIdx),
-        ren_zhuang: renZhuang,
+        bottom: base, units: taiValue,
+        dealer: resolveName(dealerIdx), ren_zhuang: renZhuang,
         east_name: resolveName(0), south_name: resolveName(1),
         west_name: resolveName(2), north_name: resolveName(3),
         is_confirmed: true,
@@ -318,7 +282,13 @@ export function useGameState() {
       if (isSinglePlayer) {
         setHistory(prev => prev.slice(1));
       } else {
-        await dbDeleteRecord(history[0].id);
+        const recordId = history[0].id;
+        // 寫入 deleted_records 讓 Make 知道要刪試算表那筆
+        await supabase.from('deleted_records').insert({
+          record_id: recordId,
+          room_id: roomId,
+        });
+        await dbDeleteRecord(recordId);
         await fetchHistory(roomId);
       }
     });
