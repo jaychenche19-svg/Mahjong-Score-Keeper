@@ -83,7 +83,13 @@ export function useGameState() {
     show: false, title: '', onConfirm: () => {},
   });
 
-  const [defaultNameSetting, setDefaultNameSetting] = useState('');
+  const [defaultNameSetting, setDefaultNameSettingState] = useState(() => {
+    return localStorage.getItem('mj_default_name') || '';
+  });
+  const setDefaultNameSetting = (name: string) => {
+    localStorage.setItem('mj_default_name', name);
+    setDefaultNameSettingState(name);
+  };
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tempName, setTempName] = useState('');
 
@@ -174,7 +180,10 @@ export function useGameState() {
         if (roomId && myRole !== -1) {
           await supabase.from('players').delete().eq('room_id', roomId).eq('role_idx', myRole);
         }
-        await dbReleaseUsername(getDeviceId());
+        // ✅ 只有用「你的稱呼」輸入的名字才刪，預設名字不刪
+        if (myName && myName !== defaultNameSetting) {
+          await dbReleaseUsername(getDeviceId());
+        }
         setHistory([]); setView('landing'); setMyRole(-1);
         setHuTai(''); setRenZhuang(0); setDealerIdx(0);
         setWinnerIdx(0); setLoserIdx(-1);
