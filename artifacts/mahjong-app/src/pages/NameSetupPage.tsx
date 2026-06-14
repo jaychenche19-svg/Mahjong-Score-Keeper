@@ -11,6 +11,7 @@ interface Props {
   isSinglePlayer: boolean;
   customNames: string[];
   confirmConfig: ConfirmConfig;
+  defaultNameSetting: string;
   onMyNameChange: (val: string) => void;
   onOtherNameChange: (idx: number, val: string) => void;
   onNext: () => void;
@@ -43,7 +44,7 @@ function getDeviceId(): string {
 }
 
 export function NameSetupPage({
-  myRole, myName, isSinglePlayer, customNames, confirmConfig,
+  myRole, myName, isSinglePlayer, customNames, confirmConfig, defaultNameSetting,
   onMyNameChange, onOtherNameChange, onNext, onBack, onConfirm, onCancel,
 }: Props) {
   const [nameError, setNameError] = useState('');
@@ -72,7 +73,8 @@ export function NameSetupPage({
     const err = checkNameError(myName);
     if (err) { setNameError(err); return; }
 
-    if (myName) {
+    if (myName && myName !== defaultNameSetting) {
+      // 只有跟預設名字不同才檢查和存入
       setChecking(true);
       const deviceId = getDeviceId();
       const isTaken = await dbCheckUsername(myName, deviceId);
