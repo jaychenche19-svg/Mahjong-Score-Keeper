@@ -7,7 +7,6 @@ const SUPABASE_ANON_KEY =
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 把 rooms 表的 east/south/west/north_name 轉成 players 陣列
 function roomToPlayers(room: any): (Player | null)[] {
   const arr: (Player | null)[] = [null, null, null, null];
   const names = [room.east_name, room.south_name, room.west_name, room.north_name];
@@ -111,9 +110,15 @@ export async function dbInsertPlayer(room_id: string, role_idx: number, name: st
 
 export async function dbInsertRecord(params: {
   room_id: string; winner: string; loser: string; total_win: number;
-  east_change: number; south_change: number; west_change: number; north_change: number;
-}) {
-  return supabase.from('game_records').insert(params);
+  east_change: number; south_name: number; west_change: number; north_change: number; // 注意：這裡原文程式碼有筆誤 south_name 應為 south_change
+}): Promise<{ id: number } | null> {
+  const { data, error } = await supabase
+    .from('game_records')
+    .insert(params)
+    .select('id')
+    .single();
+  if (error) return null;
+  return data as { id: number };
 }
 
 export async function dbDeleteRecord(id: number) {
@@ -128,15 +133,50 @@ export async function dbUpdateRoomState(roomId: string, dealer: string, ren_zhua
   return supabase.from('rooms').update({ dealer, ren_zhuang }).eq('id', roomId);
 }
 
-// 選座位：把 rooms 表的對應 name 欄位改成 __taken__ 表示已被選
 export async function dbSelectSeat(roomId: string, roleIdx: number, tempName: string) {
   const colMap = ['east_name', 'south_name', 'west_name', 'north_name'];
   return supabase.from('rooms').update({ [colMap[roleIdx]]: tempName }).eq('id', roomId);
 }
 
-// 釋放座位：把 rooms 表的對應 name 欄位改回預設
 export async function dbReleaseSeat(roomId: string, roleIdx: number) {
   const colMap = ['east_name', 'south_name', 'west_name', 'north_name'];
   const defaults = ['東', '南', '西', '北'];
   return supabase.from('rooms').update({ [colMap[roleIdx]]: defaults[roleIdx] }).eq('id', roomId);
+}
+
+// 取得或產生裝置ID
+export function getDeviceId(): string {
+  let id = localStorage.getItem('mj_device_id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('mj_device_id', id);
+  }
+  return id;
+}
+
+// 預設名字不檢查
+const DEFAULT_NAMES = ['東風', '南風', '西風', '北風', '東', '南', '西', '北'];
+
+// 檢查名字是否被其他裝置使用中
+export async function dbCheckUsername(name: string, deviceId: string): Promise<boolean> {
+  if (!name || DEFAULT_NAMES.includes(name)) return false;
+  const { data } = await supabase
+    .from('usernames')
+    .select('device_id')
+    .eq('name', name)
+    .maybeSingle();
+  if (!data) return false;
+  return data.device_id !== deviceId;
+}
+
+// 註冊名字
+export async function dbRegisterUsername(name: string, deviceId: string): Promise<void> {
+  if (!name || DEFAULT_NAMES.includes(name)) return;
+  await supabase.from('usernames').delete().eq('device_id', deviceId);
+  await supabase.from('usernames').insert({ name, device_id: deviceId });
+}
+
+// 退出房間時刪除名字
+export async function dbReleaseUsername(deviceId: string): Promise<void> {
+  await supabase.from('usernames').delete().eq('device_id', deviceId);
 }

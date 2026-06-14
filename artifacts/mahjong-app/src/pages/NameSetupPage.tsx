@@ -3,6 +3,7 @@ import { Edit3 } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import type { ConfirmConfig } from '../types';
 import { BASE_ROLES } from '../utils/constants';
+import { dbCheckUsername, dbRegisterUsername } from '../lib/supabase';
 
 interface Props {
   myRole: number;
@@ -32,12 +33,22 @@ const checkNameError = (val: string): string => {
   return '';
 };
 
+function getDeviceId(): string {
+  let id = localStorage.getItem('mj_device_id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('mj_device_id', id);
+  }
+  return id;
+}
+
 export function NameSetupPage({
   myRole, myName, isSinglePlayer, customNames, confirmConfig,
   onMyNameChange, onOtherNameChange, onNext, onBack, onConfirm, onCancel,
 }: Props) {
   const [nameError, setNameError] = useState('');
   const [otherErrors, setOtherErrors] = useState<string[]>(['', '', '', '']);
+  const [checking, setChecking] = useState(false);
   const composing = useRef(false);
 
   const handleMyNameChange = (val: string) => {
@@ -57,9 +68,22 @@ export function NameSetupPage({
     onOtherNameChange(idx, val || BASE_ROLES[idx]);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const err = checkNameError(myName);
     if (err) { setNameError(err); return; }
+
+    if (myName) {
+      setChecking(true);
+      const deviceId = getDeviceId();
+      const isTaken = await dbCheckUsername(myName, deviceId);
+      setChecking(false);
+      if (isTaken) {
+        setNameError('用戶名稱已被使用');
+        return;
+      }
+      await dbRegisterUsername(myName, deviceId);
+    }
+
     onNext();
   };
 
@@ -117,8 +141,9 @@ export function NameSetupPage({
         <button
           className="w-full h-20 bg-[#C7C7CC] text-gray-900 rounded-[2rem] font-black text-xl border-none btn-spring"
           onClick={handleNext}
+          disabled={checking}
         >
-          下一步
+          {checking ? '檢查中...' : '下一步'}
         </button>
         <button onClick={onBack} className="w-full text-gray-400 font-bold border-none mt-2">返回</button>
       </div>

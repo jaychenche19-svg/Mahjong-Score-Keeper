@@ -30,3 +30,12 @@ externalPort = 8081
 [[ports]]
 localPort = 21820
 externalPort = 3000
+
+[rules]
+
+[rules.formatter]
+
+[rules.formatter.fileExtensions]
+
+[rules.formatter.fileExtensions.".ts"]
+id = "module:nodejs-24/formatter:prettier"

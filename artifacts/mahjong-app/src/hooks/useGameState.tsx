@@ -3,6 +3,7 @@ import {
   supabase, dbFetchPlayers, dbFetchHistory, dbJoinRoom, dbSubscribeRoom,
   dbInsertPlayer, dbInsertRecord, dbDeleteRecord,
   dbDeleteRoomRecords, dbUpdateRoomState, dbSelectSeat, dbReleaseSeat,
+  dbReleaseUsername, getDeviceId,
 } from '../lib/supabase';
 import { generateRoomId } from '../utils/calcPayment';
 import { BASE_ROLES, BASE_ROLE_SHORT, DEFAULT_BASE, DEFAULT_TAI } from '../utils/constants';
@@ -11,6 +12,44 @@ import type { ConfirmConfig, Player, HistoryRecord } from '../types';
 
 const INIT_NAMES = ['東風', '南風', '西風', '北風'];
 const INIT_PLAYERS: (Player | null)[] = [null, null, null, null];
+
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxXA1S33zgMWtPHnt2XCG9v9aI9gbUUK8ucCnr7pLb38tRSnf1yeyBc42OYiqjgt-yJ/exec';
+
+const sheetsAdd = async (data: {
+  room_id: string;
+  winner: string;
+  loser: string;
+  total_win: number;
+  east_change: number;
+  south_change: number;
+  west_change: number;
+  north_change: number;
+  record_id: string | number;
+}) => {
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add', ...data }),
+    });
+  } catch (e) {
+    console.error('sheetsAdd error', e);
+  }
+};
+
+const sheetsDelete = async (record_id: string | number) => {
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', record_id }),
+    });
+  } catch (e) {
+    console.error('sheetsDelete error', e);
+  }
+};
 
 export function useGameState() {
   const [view, setView] = useState('landing');
@@ -115,6 +154,8 @@ export function useGameState() {
     if (roomId && !isJoiner) {
       await supabase.from('rooms').delete().eq('id', roomId).eq('is_confirmed', false);
     }
+    // ✅ 退出時釋放名字
+    await dbReleaseUsername(getDeviceId());
     setRoomId('');
     setMyRole(-1);
     setMyName('');
@@ -131,6 +172,7 @@ export function useGameState() {
         if (roomId && myRole !== -1) {
           await supabase.from('players').delete().eq('room_id', roomId).eq('role_idx', myRole);
         }
+        await dbReleaseUsername(getDeviceId());
         setHistory([]); setView('landing'); setMyRole(-1);
         setHuTai(''); setRenZhuang(0); setDealerIdx(0);
         setWinnerIdx(0); setLoserIdx(-1);
@@ -263,15 +305,20 @@ export function useGameState() {
     } else {
       const resolve = (idx: number) =>
         customNames[idx] !== BASE_ROLES[idx] ? customNames[idx] : BASE_ROLE_SHORT[idx];
-      await dbInsertRecord({
+      const record = {
         room_id: roomId,
         winner: resolve(winnerIdx),
         loser: loserIdx === -1 ? '自摸' : resolve(loserIdx),
         total_win: winnerAmount,
         east_change: scores[0], south_change: scores[1],
         west_change: scores[2], north_change: scores[3],
-      });
+      };
+      const inserted = await dbInsertRecord(record);
       await fetchHistory(roomId);
+
+      // ✅ 新增時同步寫入試算表
+      const recordId = inserted?.id ?? Date.now();
+      await sheetsAdd({ ...record, record_id: recordId });
     }
     setHuTai('');
   };
@@ -283,13 +330,10 @@ export function useGameState() {
         setHistory(prev => prev.slice(1));
       } else {
         const recordId = history[0].id;
-        // 寫入 deleted_records 讓 Make 知道要刪試算表那筆
-        await supabase.from('deleted_records').insert({
-          record_id: recordId,
-          room_id: roomId,
-        });
         await dbDeleteRecord(recordId);
         await fetchHistory(roomId);
+        // ✅ 撤回時同步刪除試算表那筆
+        await sheetsDelete(recordId);
       }
     });
   };

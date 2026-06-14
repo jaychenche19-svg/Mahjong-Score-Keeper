@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { PlusCircle, Users, User, Settings } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import type { ConfirmConfig } from '../types';
+import { dbCheckUsername, dbRegisterUsername } from '../lib/supabase';
 
 const BTN_GRAY = 'bg-[#D1D1D6] text-gray-900 border-none shadow-none';
 
@@ -18,6 +19,16 @@ const checkNameError = (val: string): string => {
   if (englishCount > 7) return '英文名稱不可超過七個字母';
   return '';
 };
+
+// 取得或產生裝置ID
+function getDeviceId(): string {
+  let id = localStorage.getItem('mj_device_id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('mj_device_id', id);
+  }
+  return id;
+}
 
 interface Props {
   loading: boolean;
@@ -44,6 +55,7 @@ export function LandingPage({
   onSaveSettings, onTempNameChange, onVibrationToggle, onConfirm, onCancel,
 }: Props) {
   const [nameError, setNameError] = useState('');
+  const [checking, setChecking] = useState(false);
   const composing = useRef(false);
 
   const handleNameChange = (val: string) => {
@@ -51,9 +63,22 @@ export function LandingPage({
     if (!composing.current) setNameError(checkNameError(val));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const err = checkNameError(tempName);
     if (err) { setNameError(err); return; }
+
+    if (tempName) {
+      setChecking(true);
+      const deviceId = getDeviceId();
+      const isTaken = await dbCheckUsername(tempName, deviceId);
+      setChecking(false);
+      if (isTaken) {
+        setNameError('用戶名稱已被使用');
+        return;
+      }
+      await dbRegisterUsername(tempName, deviceId);
+    }
+
     setNameError('');
     onSaveSettings();
   };
@@ -132,9 +157,10 @@ export function LandingPage({
               <button
                 type="button"
                 onClick={handleSave}
+                disabled={checking}
                 className="w-full py-4 bg-[#C7C7CC] text-gray-900 rounded-[1.8rem] text-xl font-black btn-spring"
               >
-                儲存並關閉
+                {checking ? '檢查中...' : '儲存並關閉'}
               </button>
               <button
                 type="button"
