@@ -10,7 +10,7 @@ import { BASE_ROLES, BASE_ROLE_SHORT, DEFAULT_BASE, DEFAULT_TAI } from '../utils
 import { useHaptic } from './useHaptic';
 import type { ConfirmConfig, Player, HistoryRecord } from '../types';
 
-const INIT_NAMES = ['東風', '南風', '西風', '北風'];
+const INIT_NAMES = ['東', '南', '西', '北'];
 const INIT_PLAYERS: (Player | null)[] = [null, null, null, null];
 
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxXA1S33zgMWtPHnt2XCG9v9aI9gbUUK8ucCnr7pLb38tRSnf1yeyBc42OYiqjgt-yJ/exec';
