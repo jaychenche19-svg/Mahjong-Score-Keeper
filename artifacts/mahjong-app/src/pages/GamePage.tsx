@@ -31,7 +31,6 @@ interface Props {
   onLoserChange: (val: number) => void;
   onHuTaiChange: (val: number | '') => void;
   onSaveRecord: (scores: number[], winnerIdx: number, dealerIdx: number, renZhuang: number) => void;
-  onDraw: () => void;
   onUndoLast: () => void;
   onReset: () => void;
   onBackToHome: () => void;
@@ -50,7 +49,7 @@ export function GamePage({
   base, taiValue, dealerIdx, renZhuang, winnerIdx, loserIdx, huTai,
   history, activeTab, totalScores, loserKing, selfDrawKing, confirmConfig,
   onDealerChange, onRenZhuangChange, onWinnerChange, onLoserChange, onHuTaiChange,
-  onSaveRecord, onDraw, onUndoLast, onReset, onBackToHome, onTabChange,
+  onSaveRecord, onUndoLast, onReset, onBackToHome, onTabChange,
   hapticClick, hapticSlide, triggerConfirm, onConfirm, onCancel,
 }: Props) {
   const touchStartX = useRef<number | null>(null);
@@ -68,7 +67,6 @@ export function GamePage({
     touchStartX.current = null;
     touchStartY.current = null;
 
-    // 垂直滑動超過水平就不切換（避免上下滾動誤觸）
     if (dy > Math.abs(dx) * 0.8) return;
     if (Math.abs(dx) < 40) return;
 
@@ -111,7 +109,6 @@ export function GamePage({
             onLoserChange={onLoserChange}
             onHuTaiChange={onHuTaiChange}
             onSaveRecord={onSaveRecord}
-            onDraw={onDraw}
             triggerConfirm={triggerConfirm}
             hapticSlide={hapticSlide}
           />

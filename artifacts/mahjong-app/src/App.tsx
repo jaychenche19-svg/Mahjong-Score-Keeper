@@ -7,6 +7,7 @@ import { NameSetupPage } from './pages/NameSetupPage';
 import { ConfigSetupPage } from './pages/ConfigSetupPage';
 import { GamePage } from './pages/GamePage';
 import { BASE_ROLES } from './utils/constants';
+import { dbCheckUsername, dbRegisterUsername, getDeviceId } from './lib/supabase';
 
 export default function MahjongApp() {
   const g = useGameState();
@@ -32,7 +33,14 @@ export default function MahjongApp() {
       onSaveSettings={() => {
         g.hapticClick();
         if (g.tempName !== g.defaultNameSetting) {
-          g.triggerConfirm('確認修改預設名稱嗎？', () => {
+          g.triggerConfirm('確認修改預設名稱嗎？', async () => {
+            const deviceId = getDeviceId();
+            const isTaken = await dbCheckUsername(g.tempName, deviceId);
+            if (isTaken) {
+              // 名字被使用，不儲存（LandingPage 那邊已有錯誤顯示）
+              return;
+            }
+            await dbRegisterUsername(g.tempName, deviceId);
             g.setDefaultNameSetting(g.tempName);
             g.setSettingsOpen(false);
           });

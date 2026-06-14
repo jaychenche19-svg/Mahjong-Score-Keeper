@@ -19,7 +19,6 @@ interface Props {
   onLoserChange: (val: number) => void;
   onHuTaiChange: (val: number | '') => void;
   onSaveRecord: (scores: number[], winnerIdx: number, dealerIdx: number, renZhuang: number) => void;
-  onDraw: () => void;
   triggerConfirm: (title: string, onConfirm: () => void, description?: ReactNode) => void;
   hapticSlide: () => void;
 }
@@ -27,7 +26,7 @@ interface Props {
 export function ScoreTab({
   base, taiValue, dealerIdx, renZhuang, winnerIdx, loserIdx, huTai, customNames,
   onDealerChange, onRenZhuangChange, onWinnerChange, onLoserChange, onHuTaiChange,
-  onSaveRecord, onDraw, triggerConfirm, hapticSlide,
+  onSaveRecord, triggerConfirm, hapticSlide,
 }: Props) {
   const taiNum = Number(huTai) || 0;
   const taiError = taiNum > MAX_TAI ? `台數上限 ${MAX_TAI} 台` : '';
@@ -95,7 +94,6 @@ export function ScoreTab({
           <span className="font-bold text-gray-900">{isSelfDraw ? '贏家總收' : '總金額'}</span>
           <span className="text-4xl font-black text-blue-600">${displayTotal}</span>
         </div>
-        <p className="text-xs text-gray-400 text-center pt-1">確認後莊家將自動輪換</p>
       </div>
     );
 
