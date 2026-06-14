@@ -154,8 +154,10 @@ export function useGameState() {
     if (roomId && !isJoiner) {
       await supabase.from('rooms').delete().eq('id', roomId).eq('is_confirmed', false);
     }
-    // ✅ 退出時釋放名字
-    await dbReleaseUsername(getDeviceId());
+    // ✅ 只有用「你的稱呼」輸入的名字才刪，預設名字不刪
+    if (myName && myName !== defaultNameSetting) {
+      await dbReleaseUsername(getDeviceId());
+    }
     setRoomId('');
     setMyRole(-1);
     setMyName('');
