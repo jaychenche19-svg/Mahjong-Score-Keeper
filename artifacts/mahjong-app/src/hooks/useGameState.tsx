@@ -13,7 +13,7 @@ import type { ConfirmConfig, Player, HistoryRecord } from '../types';
 const INIT_NAMES = ['東', '南', '西', '北'];
 const INIT_PLAYERS: (Player | null)[] = [null, null, null, null];
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxXA1S33zgMWtPHnt2XCG9v9aI9gbUUK8ucCnr7pLb38tRSnf1yeyBc42OYiqjgt-yJ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhuHECD8fPpqhAz80uhHx_hrujyrfKw2tBs--jZVuah4fHU0xJt469uBYdsWL285fF/exec';
 
 const sheetsAdd = async (data: {
   room_id: string;
@@ -160,7 +160,6 @@ export function useGameState() {
     if (roomId && !isJoiner) {
       await supabase.from('rooms').delete().eq('id', roomId).eq('is_confirmed', false);
     }
-    // ✅ 只有用「你的稱呼」輸入的名字才刪，預設名字不刪
     if (myName && myName !== defaultNameSetting) {
       await dbReleaseTempUsername(getDeviceId());
     }
@@ -171,6 +170,7 @@ export function useGameState() {
     setPlayers([...INIT_PLAYERS]);
     setView('landing');
   };
+
   const handleBackToHome = () => {
     triggerConfirm(
       '確定要返回主畫面嗎？',
@@ -179,7 +179,6 @@ export function useGameState() {
         if (roomId && myRole !== -1) {
           await supabase.from('players').delete().eq('room_id', roomId).eq('role_idx', myRole);
         }
-        // ✅ 只有用「你的稱呼」輸入的名字才刪，預設名字不刪
         if (myName && myName !== defaultNameSetting) {
           await dbReleaseTempUsername(getDeviceId());
         }
@@ -325,8 +324,6 @@ export function useGameState() {
       };
       const inserted = await dbInsertRecord(record);
       await fetchHistory(roomId);
-
-      // ✅ 新增時同步寫入試算表
       const recordId = inserted?.id ?? Date.now();
       await sheetsAdd({ ...record, record_id: recordId });
     }
@@ -342,7 +339,6 @@ export function useGameState() {
         const recordId = history[0].id;
         await dbDeleteRecord(recordId);
         await fetchHistory(roomId);
-        // ✅ 撤回時同步刪除試算表那筆
         await sheetsDelete(recordId);
       }
     });
