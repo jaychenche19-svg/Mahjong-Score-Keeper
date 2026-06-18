@@ -3,7 +3,7 @@ import { Edit3 } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import type { ConfirmConfig } from '../types';
 import { BASE_ROLES } from '../utils/constants';
-import { dbCheckUsername, dbRegisterUsername } from '../lib/supabase';
+import { dbCheckUsernameAll, dbRegisterTempUsername, getDeviceId } from '../lib/supabase';
 
 interface Props {
   myRole: number;
@@ -74,16 +74,16 @@ export function NameSetupPage({
     if (err) { setNameError(err); return; }
 
     if (myName && myName !== defaultNameSetting) {
-      // 只有跟預設名字不同才檢查和存入
+      // 只有跟預設名字不同才檢查和存入臨時名字
       setChecking(true);
       const deviceId = getDeviceId();
-      const isTaken = await dbCheckUsername(myName, deviceId);
+      const isTaken = await dbCheckUsernameAll(myName, deviceId);
       setChecking(false);
       if (isTaken) {
         setNameError('用戶名稱已被使用');
         return;
       }
-      await dbRegisterUsername(myName, deviceId);
+      await dbRegisterTempUsername(myName, deviceId);
     }
 
     onNext();

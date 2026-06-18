@@ -3,7 +3,7 @@ import {
   supabase, dbFetchPlayers, dbFetchHistory, dbJoinRoom, dbSubscribeRoom,
   dbInsertPlayer, dbInsertRecord, dbDeleteRecord,
   dbDeleteRoomRecords, dbUpdateRoomState, dbSelectSeat, dbReleaseSeat,
-  dbReleaseUsername, getDeviceId,
+  dbReleaseUsername, dbReleaseTempUsername, getDeviceId,
 } from '../lib/supabase';
 import { generateRoomId } from '../utils/calcPayment';
 import { BASE_ROLES, BASE_ROLE_SHORT, DEFAULT_BASE, DEFAULT_TAI } from '../utils/constants';
@@ -162,7 +162,7 @@ export function useGameState() {
     }
     // ✅ 只有用「你的稱呼」輸入的名字才刪，預設名字不刪
     if (myName && myName !== defaultNameSetting) {
-      await dbReleaseUsername(getDeviceId());
+      await dbReleaseTempUsername(getDeviceId());
     }
     setRoomId('');
     setMyRole(-1);
@@ -171,7 +171,6 @@ export function useGameState() {
     setPlayers([...INIT_PLAYERS]);
     setView('landing');
   };
-
   const handleBackToHome = () => {
     triggerConfirm(
       '確定要返回主畫面嗎？',
@@ -182,7 +181,7 @@ export function useGameState() {
         }
         // ✅ 只有用「你的稱呼」輸入的名字才刪，預設名字不刪
         if (myName && myName !== defaultNameSetting) {
-          await dbReleaseUsername(getDeviceId());
+          await dbReleaseTempUsername(getDeviceId());
         }
         setHistory([]); setView('landing'); setMyRole(-1);
         setHuTai(''); setRenZhuang(0); setDealerIdx(0);

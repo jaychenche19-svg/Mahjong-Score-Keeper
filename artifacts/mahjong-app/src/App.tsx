@@ -100,6 +100,7 @@ export default function MahjongApp() {
       isSinglePlayer={g.isSinglePlayer}
       customNames={g.customNames}
       confirmConfig={g.confirmConfig}
+      defaultNameSetting={g.defaultNameSetting}
       onMyNameChange={g.setMyName}
       onOtherNameChange={(idx, val) => {
         const n = [...g.customNames];

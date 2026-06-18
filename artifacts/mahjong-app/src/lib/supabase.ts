@@ -110,7 +110,7 @@ export async function dbInsertPlayer(room_id: string, role_idx: number, name: st
 
 export async function dbInsertRecord(params: {
   room_id: string; winner: string; loser: string; total_win: number;
-  east_change: number; south_name: number; west_change: number; north_change: number; // 注意：這裡原文程式碼有筆誤 south_name 應為 south_change
+  east_change: number; south_change: number; west_change: number; north_change: number;
 }): Promise<{ id: number } | null> {
   const { data, error } = await supabase
     .from('game_records')
@@ -144,7 +144,6 @@ export async function dbReleaseSeat(roomId: string, roleIdx: number) {
   return supabase.from('rooms').update({ [colMap[roleIdx]]: defaults[roleIdx] }).eq('id', roomId);
 }
 
-// 取得或產生裝置ID
 export function getDeviceId(): string {
   let id = localStorage.getItem('mj_device_id');
   if (!id) {
@@ -154,10 +153,8 @@ export function getDeviceId(): string {
   return id;
 }
 
-// 預設名字不檢查
 const DEFAULT_NAMES = ['東風', '南風', '西風', '北風', '東', '南', '西', '北'];
 
-// 檢查名字是否被其他裝置使用中
 export async function dbCheckUsername(name: string, deviceId: string): Promise<boolean> {
   if (!name || DEFAULT_NAMES.includes(name)) return false;
   const { data } = await supabase
@@ -169,14 +166,34 @@ export async function dbCheckUsername(name: string, deviceId: string): Promise<b
   return data.device_id !== deviceId;
 }
 
-// 註冊名字
 export async function dbRegisterUsername(name: string, deviceId: string): Promise<void> {
   if (!name || DEFAULT_NAMES.includes(name)) return;
   await supabase.from('usernames').delete().eq('device_id', deviceId);
   await supabase.from('usernames').insert({ name, device_id: deviceId });
 }
 
-// 退出房間時刪除名字
 export async function dbReleaseUsername(deviceId: string): Promise<void> {
   await supabase.from('usernames').delete().eq('device_id', deviceId);
+}
+
+export async function dbRegisterTempUsername(name: string, deviceId: string): Promise<void> {
+  if (!name || DEFAULT_NAMES.includes(name)) return;
+  const tempId = `${deviceId}_temp`;
+  await supabase.from('usernames').delete().eq('device_id', tempId);
+  await supabase.from('usernames').insert({ name, device_id: tempId });
+}
+
+export async function dbReleaseTempUsername(deviceId: string): Promise<void> {
+  await supabase.from('usernames').delete().eq('device_id', `${deviceId}_temp`);
+}
+
+export async function dbCheckUsernameAll(name: string, deviceId: string): Promise<boolean> {
+  if (!name || DEFAULT_NAMES.includes(name)) return false;
+  const { data } = await supabase
+    .from('usernames')
+    .select('device_id')
+    .eq('name', name)
+    .maybeSingle();
+  if (!data) return false;
+  return data.device_id !== deviceId && data.device_id !== `${deviceId}_temp`;
 }
