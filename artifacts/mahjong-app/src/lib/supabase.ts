@@ -76,11 +76,15 @@ export function dbSubscribeRoom(rid: string, callbacks: SubscriptionCallbacks) {
     .on('postgres_changes' as any, { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${rid}` }, callbacks.onPlayersChange)
     .subscribe();
 
-  const historyCh = supabase
-    .channel(`history-${rid}`)
+  const historyInsertCh = supabase
+    .channel(`history-insert-${rid}`)
     .on('postgres_changes' as any, { event: 'INSERT', schema: 'public', table: 'game_records', filter: `room_id=eq.${rid}` }, callbacks.onHistoryChange)
-    .on('postgres_changes' as any, { event: 'UPDATE', schema: 'public', table: 'game_records', filter: `room_id=eq.${rid}` }, callbacks.onHistoryChange)
-    .on('postgres_changes' as any, { event: 'DELETE', schema: 'public', table: 'game_records', filter: `room_id=eq.${rid}` }, callbacks.onHistoryChange)
+    .subscribe();
+
+  // DELETE 不加 filter，因為刪除後資料已不存在無法過濾
+  const historyDeleteCh = supabase
+    .channel(`history-delete-${rid}`)
+    .on('postgres_changes' as any, { event: 'DELETE', schema: 'public', table: 'game_records' }, callbacks.onHistoryChange)
     .subscribe();
 
   const roomCh = supabase
@@ -90,7 +94,7 @@ export function dbSubscribeRoom(rid: string, callbacks: SubscriptionCallbacks) {
     })
     .subscribe();
 
-  return [playersCh, historyCh, roomCh];
+  return [playersCh, historyInsertCh, historyDeleteCh, roomCh];
 }
 
 export async function dbInsertRoom(params: {
