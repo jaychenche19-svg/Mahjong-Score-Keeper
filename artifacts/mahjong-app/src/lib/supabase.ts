@@ -75,16 +75,21 @@ export function dbSubscribeRoom(rid: string, callbacks: SubscriptionCallbacks) {
     .channel(`players-${rid}`)
     .on('postgres_changes' as any, { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${rid}` }, callbacks.onPlayersChange)
     .subscribe();
+
   const historyCh = supabase
     .channel(`history-${rid}`)
-    .on('postgres_changes' as any, { event: '*', schema: 'public', table: 'game_records', filter: `room_id=eq.${rid}` }, callbacks.onHistoryChange)
+    .on('postgres_changes' as any, { event: 'INSERT', schema: 'public', table: 'game_records', filter: `room_id=eq.${rid}` }, callbacks.onHistoryChange)
+    .on('postgres_changes' as any, { event: 'UPDATE', schema: 'public', table: 'game_records', filter: `room_id=eq.${rid}` }, callbacks.onHistoryChange)
+    .on('postgres_changes' as any, { event: 'DELETE', schema: 'public', table: 'game_records', filter: `room_id=eq.${rid}` }, callbacks.onHistoryChange)
     .subscribe();
+
   const roomCh = supabase
     .channel(`rooms-${rid}`)
     .on('postgres_changes' as any, { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${rid}` }, (payload: any) => {
       callbacks.onRoomUpdate(payload.new);
     })
     .subscribe();
+
   return [playersCh, historyCh, roomCh];
 }
 
